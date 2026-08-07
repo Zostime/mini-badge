@@ -1,0 +1,36 @@
+# Keil uVision build output
+*.axf
+*.hex
+*.htm
+*.lnp
+*.lst
+*.map
+*.o
+*.obj
+*.scr
+*.tra
+
+# Listings and dependency files
+*.d
+*.crf
+*.htm
+*.sct
+
+# Debugger and simulation files
+*.uvguix.*
+
+# Build folders (adjust if different)
+Listings/
+Objects/
+DebugConfig/
+
+# Backup files
+*.__i
+*.__ia
+*.__ib
+*.__ic
+*.__id
+
+#
+.vscode/
+.gitignore
