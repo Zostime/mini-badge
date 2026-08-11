@@ -23,6 +23,34 @@ void SYS_Init(void)
     LCD_SetBrightness(1000);
 }
 
+static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp)
+{
+    if (p >= end) return 0;
+    uint8_t c = *p;
+    int len;
+    uint32_t uc;
+
+    if ((c & 0x80) == 0) {
+        *cp = c;
+        return 1;
+    } else if ((c & 0xE0) == 0xC0) {
+        len = 2; uc = c & 0x1F;
+    } else if ((c & 0xF0) == 0xE0) {
+        len = 3; uc = c & 0x0F;
+    } else if ((c & 0xF8) == 0xF0) {
+        len = 4; uc = c & 0x07;
+    } else {
+        return 0;
+    }
+    if (p + len > end) return 0;
+    for (int i = 1; i < len; i++) {
+        if ((p[i] & 0xC0) != 0x80) return 0;
+        uc = (uc << 6) | (p[i] & 0x3F);
+    }
+    *cp = uc;
+    return len;
+}
+
 void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_color, const char *fmt, ...)
 {
     char buf[SYS_PRINT_BUFFER_SIZE];
@@ -31,92 +59,67 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
 
-    FIL file_asc, file_gb;
-    uint8_t gb_opened = 0;
-
-    if (f_open(&file_asc, "0:/sys/fonts/ASC_DEFAULT_6x8", FA_READ) != FR_OK)
+    FIL file_uni;
+    if (f_open(&file_uni, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK)
         return;
-    gb_opened = (f_open(&file_gb, "0:/sys/fonts/GB2312_DEFAULT_8x8", FA_READ) == FR_OK);
 
     uint16_t cur_x = x, cur_y = y;
-    const char *p = buf;
+    const uint8_t *p = (const uint8_t *)buf;
+    const uint8_t *end = (const uint8_t *)(buf + sizeof(buf));
 
-    while (*p)
+    while (p < end && *p)
     {
+        // 换行符
         if (*p == '\n') {
             cur_x = x;
-            cur_y += 8;	// 行高统一 8
+            cur_y += 8;
             p++;
             continue;
         }
 
-        FIL *fp;
-        uint8_t w, h;
-        uint8_t col_data[16];             
-        uint32_t offset;
-
-        // ---- ASCII (< 0x80) ----
-        if ((uint8_t)*p < 0x80) {
-            char ch = *p;
-            if (ch < 32 || ch > 126) ch = 32;
-            offset = (uint32_t)(ch - 32) * 6;
-            fp = &file_asc;
-            w = 6; h = 8;
-
-            f_lseek(fp, offset);
-            UINT br;
-            f_read(fp, col_data, 6, &br);
-            p++;
-        }
-        // GB2312 汉字 (>= 0xA1)
-        else if (gb_opened && (uint8_t)*p >= 0xA1) {
-            uint8_t hi = (uint8_t)*p;
-            uint8_t lo = (uint8_t)*(p + 1);
-            // 区码 = hi - 0xA0, 位码 = lo - 0xA0
-            // 索引 = (区码-1)*94 + (位码-1) = (hi - 0xA1)*94 + (lo - 0xA1)
-            offset = (uint32_t)((hi - 0xA1) * 94 + (lo - 0xA1)) * 8;
-            fp = &file_gb;
-            w = 8; h = 8;
-
-            f_lseek(fp, offset);
-            UINT br;
-            f_read(fp, col_data, 8, &br);
-            p += 2;
-        }
-        else {
-            p++;
+        uint32_t cp;
+        int consumed = utf8_decode(p, end, &cp);
+        if (consumed <= 0) {
+            p++;            // 解析失败, 跳过一个字节
             continue;
         }
 
-        if (cur_x + w > LCD_H) {
+        // 从字库读取该码点的8字节点阵
+        uint8_t col_data[8];
+        f_lseek(&file_uni, (DWORD)cp * 8);
+        UINT br;
+        f_read(&file_uni, col_data, 8, &br);
+
+        if (cur_x + 8 > LCD_H) {
             cur_x = x;
-            cur_y += h;
+            cur_y += 8;
         }
-        if (cur_y + h > LCD_W) break;
+        if (cur_y + 8 > LCD_W) break;
 
-        for (uint8_t row = 0; row < h; row++) {
-            uint16_t row_buf[16];	// 行缓冲区，最大 16 列
-            for (uint8_t col = 0; col < w; col++) {
-                // 纵向取模, 高位在下
+        // 逐行批量发送
+        for (uint8_t row = 0; row < 8; row++) {
+            uint16_t row_buf[8];
+            for (uint8_t col = 0; col < 8; col++) {
                 if (col_data[col] & (0x01 << row))
                     row_buf[col] = color;
                 else
                     row_buf[col] = background_color;
             }
 
-            LCD_SetWindows(cur_x, cur_y + row, cur_x + w - 1, cur_y + row);
+            LCD_SetWindows(cur_x, cur_y + row, cur_x + 7, cur_y + row);
             LCD_CS_CLR;
             LCD_RS_SET;
             SPI_SET_16BIT;
-            for (uint8_t col = 0; col < w; col++)
+            for (uint8_t col = 0; col < 8; col++)
                 SPI_TRANSMIT_16BIT(row_buf[col]);
             SPI_WAIT();
             SPI_SET_8BIT;
             LCD_CS_SET;
         }
-        cur_x += w;
+
+        cur_x += 8;
+        p += consumed;
     }
 
-    f_close(&file_asc);
-    if (gb_opened) f_close(&file_gb);
+    f_close(&file_uni);
 }
