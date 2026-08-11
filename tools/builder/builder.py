@@ -4,7 +4,7 @@ from pathlib import Path
 
 def main():
     script_dir = Path(__file__).resolve().parent
-    apps_dir = script_dir.parent / "apps"
+    apps_dir = script_dir.parent.parent / "apps"
     target_dir = script_dir / "APPs"
 
     print(f"脚本目录: {script_dir}")

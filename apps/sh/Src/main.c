@@ -35,8 +35,9 @@
 #include "Buzzer.h"
 #include "Power.h"
 #include "rtc_utils.h"
-#include "system.h"
 #include "bootloader_api.h"
+
+#include "system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,48 +58,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-void DisplayTextFile(const char *path)
-{
-    FIL file;
-    if (f_open(&file, path, FA_READ) != FR_OK) {
-        SYS_Printf(0, 0, WHITE, BLACK, "Open file failed!");
-        return;
-    }
 
-    char line_buf[256];       // 每行最多 255 个字符
-    uint16_t cur_y = 0;
-
-    while (f_gets(line_buf, sizeof(line_buf), &file)) {
-        // 去除行末的换行符 (\r 和 \n)
-        size_t len = strlen(line_buf);
-        while (len > 0 && (line_buf[len-1] == '\n' || line_buf[len-1] == '\r')) {
-            line_buf[--len] = '\0';
-        }
-
-        // 屏幕高度检查 (LCD_H = 240)
-        if (cur_y + 8 > LCD_H) break;
-
-        SYS_Printf(0, cur_y, WHITE, BLACK, "%s", line_buf);
-        cur_y += 8;               // 行高 8 像素
-
-        // 如果已填满一屏，等待按键翻页
-        if (cur_y + 8 > LCD_H) {
-            while (1) {
-                if (Key_Check(KEY_2, KEY_SINGLE)) {   // 按键2: 下一页
-                    LCD_Clear(BLACK);                 // 清屏
-                    cur_y = 0;                        // 重置行坐标
-                    break;
-                }
-                if (Key_Check(KEY_3, KEY_SINGLE)) {   // 按键3: 退出
-                    f_close(&file);
-                    return;
-                }
-            }
-        }
-    }
-
-    f_close(&file);
-}
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -150,12 +110,15 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-	SD_Init();
-	LCD_Init();
-	SYS_Init();
-	
+  SD_Init();
+  Key_Init();
+  Buzzer_Init(); 
+  Power_Init();
+  LCD_Init();
+  
+  SYS_Init();
   /* USER CODE END 2 */
-  DisplayTextFile("0:/user/char.txt");
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)

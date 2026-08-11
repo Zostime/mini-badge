@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/FatFs;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Hardware;../System</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Middlewares/FatFs;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Hardware;../../../shared;../System</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -370,7 +370,7 @@
             <ScatterFile>.\Project\Project.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
-            <Misc>--diag_suppress=L6329,L6314</Misc>
+            <Misc></Misc>
             <LinkerInputFile></LinkerInputFile>
             <DisabledWarnings></DisabledWarnings>
           </LDads>
@@ -638,6 +638,16 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Shared</GroupName>
+          <Files>
+            <File>
+              <FileName>bootloader_api.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\shared\bootloader_api.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>Hardware</GroupName>
           <Files>
             <File>
@@ -729,16 +739,6 @@
               <FileName>system.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\System\system.h</FilePath>
-            </File>
-            <File>
-              <FileName>sys_config.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\System\sys_config.h</FilePath>
-            </File>
-            <File>
-              <FileName>bootloader_api.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\System\bootloader_api.h</FilePath>
             </File>
           </Files>
         </Group>

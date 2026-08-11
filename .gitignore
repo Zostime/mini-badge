@@ -34,4 +34,4 @@ DebugConfig/
 #
 .vscode/
 .gitignore
-tools/APPs/
+tools/builder/APPs/

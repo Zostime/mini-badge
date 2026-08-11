@@ -30,7 +30,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h)(0x6A60F22F)
 I (../Core/Inc/spi.h)(0x6A692943)
 I (../Core/Inc/gpio.h)(0x6A692943)
 I (../Hardware/spi_sdcard.h)(0x6A6792F3)
-I (../Hardware/bootloader.h)(0x6A74F4F7)
+I (../Hardware/bootloader.h)(0x6A758742)
 I (../Hardware/bootloader_api.h)(0x6A74EDCA)
 I (D:\keil5\ARM\ARMCC\include\string.h)(0x6A626CF3)
 I (../FatFs/ff.h)(0x68E0CE63)
@@ -533,7 +533,7 @@ F (..\FatFs\ffunicode.c)(0x68E0CE63)(--c99 -c --cpu Cortex-M3 -g -O3 --apcs=inte
 I (..\FatFs\ff.h)(0x68E0CE63)
 I (..\FatFs\ffconf.h)(0x6A6F0056)
 I (D:\keil5\ARM\ARMCC\include\stdint.h)(0x6A626CF3)
-F (..\..\shared\Bootloader_api.h)(0x00000000)()
+F (..\..\shared\Bootloader_api.h)(0x6A74EDCA)()
 F (..\Hardware\spi_sdcard.c)(0x6A68E8E0)(--c99 -c --cpu Cortex-M3 -g -O3 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../Hardware -I ../FatFs -I ../../shared-I.\RTE\_Bootloader-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\bootloader\spi_sdcard.o --omf_browse .\bootloader\spi_sdcard.crf --depend .\bootloader\spi_sdcard.d)
 I (..\Hardware\spi_sdcard.h)(0x6A6792F3)
 I (../Core/Inc/main.h)(0x6A692944)
@@ -593,7 +593,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A60F22F)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_spi.h)(0x6A60F22F)
 I (../FatFs/ff.h)(0x68E0CE63)
 I (../FatFs/ffconf.h)(0x6A6F0056)
-I (..\Hardware\bootloader.h)(0x6A74F4F7)
+I (..\Hardware\bootloader.h)(0x6A758742)
 I (..\Hardware\bootloader_api.h)(0x6A74EDCA)
 I (D:\keil5\ARM\ARMCC\include\string.h)(0x6A626CF3)
-F (..\Hardware\bootloader.h)(0x6A74F4F7)()
+F (..\Hardware\bootloader.h)(0x6A758742)()
