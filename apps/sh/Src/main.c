@@ -80,7 +80,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  SCB->VTOR = APP_ADDR;
+   
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -117,6 +117,7 @@ int main(void)
   LCD_Init();
   
   SYS_Init();
+  SYS_Printf(0,0,WHITE,BLACK,"你好世界\nHello World!");
   /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */

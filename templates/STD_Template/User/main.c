@@ -20,7 +20,7 @@
 
 int main(void)
 {	
-	SCB->VTOR = APP_ADDR;
+	 
 	
 	LCD_Init();
 	Key_Init();

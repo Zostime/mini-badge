@@ -78,7 +78,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  SCB->VTOR = APP_ADDR;
+   
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
