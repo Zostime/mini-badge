@@ -69,7 +69,6 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
     while (p < end && *p)
     {
-        // 换行符
         if (*p == '\n') {
             cur_x = x;
             cur_y += 8;
@@ -80,7 +79,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         uint32_t cp;
         int consumed = utf8_decode(p, end, &cp);
         if (consumed <= 0) {
-            p++;            // 解析失败, 跳过一个字节
+            p++;           
             continue;
         }
 
@@ -90,7 +89,13 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         UINT br;
         f_read(&file_uni, col_data, 8, &br);
 
-        if (cur_x + 8 > LCD_H) {
+		uint8_t x_offset = (
+			cp<=0x7F ||				    // ascii
+			(0xFF65<=cp&&cp<=0xFF9F) || // 日语半角片假名与标点
+			(0x400<=cp&&cp<=0x4FF) ||   // 西里尔字母
+			(0x370<=cp&&cp<=0x3FF)
+		) ? 6:8;
+        if (cur_x + x_offset > LCD_H) {
             cur_x = x;
             cur_y += 8;
         }
@@ -99,25 +104,25 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         // 逐行批量发送
         for (uint8_t row = 0; row < 8; row++) {
             uint16_t row_buf[8];
-            for (uint8_t col = 0; col < 8; col++) {
+            for (uint8_t col = 0; col < x_offset; col++) {
                 if (col_data[col] & (0x01 << row))
                     row_buf[col] = color;
                 else
                     row_buf[col] = background_color;
             }
 
-            LCD_SetWindows(cur_x, cur_y + row, cur_x + 7, cur_y + row);
+            LCD_SetWindows(cur_x, cur_y + row, cur_x + (x_offset-1), cur_y + row);
             LCD_CS_CLR;
             LCD_RS_SET;
             SPI_SET_16BIT;
-            for (uint8_t col = 0; col < 8; col++)
+            for (uint8_t col = 0; col < x_offset; col++)
                 SPI_TRANSMIT_16BIT(row_buf[col]);
             SPI_WAIT();
             SPI_SET_8BIT;
             LCD_CS_SET;
         }
 
-        cur_x += 8;
+        cur_x += x_offset;
         p += consumed;
     }
 
