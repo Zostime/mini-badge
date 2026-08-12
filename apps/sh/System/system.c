@@ -2,13 +2,12 @@
 #include "ff.h"
 #include "ST7789V.h"
 #include "GUI.h"
+#include "bootloader_api.h"
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include <stdio.h>    
 
 FATFS sSDCARD_FatFs;
-void SYS_Init(void)
-{
+void SYS_Init(void) {
     FRESULT SD_res;
     SD_res = f_mount(&sSDCARD_FatFs, "0:", 0);
     if (SD_res != FR_OK) {
@@ -23,8 +22,7 @@ void SYS_Init(void)
     LCD_SetBrightness(1000);
 }
 
-static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp)
-{
+static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp) {
     if (p >= end) return 0;
     uint8_t c = *p;
     int len;
@@ -69,6 +67,10 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
     while (p < end && *p)
     {
+		if (*p == '\r') {
+			p++;
+			continue;
+		}
         if (*p == '\n') {
             cur_x = x;
             cur_y += 8;
@@ -76,55 +78,66 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
             continue;
         }
 
+        // 解析 UTF-8 码点, 失败则替换为 U+FFFD
         uint32_t cp;
         int consumed = utf8_decode(p, end, &cp);
         if (consumed <= 0) {
-            p++;           
-            continue;
+            cp = 0xFFFD;     
+            consumed = 1;     // 跳过当前非法字节
         }
 
-        // 从字库读取该码点的8字节点阵
-        uint8_t col_data[8];
-        f_lseek(&file_uni, (DWORD)cp * 8);
+        // 从字库读取9字节[宽度][点阵]
+        f_lseek(&file_uni, (DWORD)cp * 9);
         UINT br;
-        f_read(&file_uni, col_data, 8, &br);
+        uint8_t char_data[9];
+        f_read(&file_uni, char_data, 9, &br);
 
-		// 全半角字符
-		uint8_t x_offset = (
-			cp<=0x7F ||				    // ascii
-			(0xFF65<=cp&&cp<=0xFF9F) || // 日语半角片假名与标点
-			(0x400<=cp&&cp<=0x4FF) ||   // 西里尔字母
-			(0x370<=cp&&cp<=0x3FF)		// 希腊字母
-		) ? 6:8;                               
-		
-        if (cur_x + x_offset > LCD_H) {
+        uint8_t char_width = char_data[0];
+        uint8_t *col_data = char_data + 1;
+
+        // 如果缺少字形, 替换为U+25A1
+        if (char_width == 0) {
+            cp = 0x25A1;
+            f_lseek(&file_uni, (DWORD)cp * 9);
+            f_read(&file_uni, char_data, 9, &br);
+            char_width = char_data[0];
+            col_data = char_data + 1;
+
+			// 无 U+25A1
+            if (char_width == 0) {
+                char_width = 8;
+            }
+        }
+
+        // 自动换行判断
+        if (cur_x + char_width > LCD_H) {
             cur_x = x;
             cur_y += 8;
         }
         if (cur_y + 8 > LCD_W) break;
 
-        // 逐行批量发送
+        // 逐行批量发送像素 (纵向取模高位在下)
         for (uint8_t row = 0; row < 8; row++) {
             uint16_t row_buf[8];
-            for (uint8_t col = 0; col < x_offset; col++) {
+            for (uint8_t col = 0; col < char_width; col++) {
                 if (col_data[col] & (0x01 << row))
                     row_buf[col] = color;
                 else
                     row_buf[col] = background_color;
             }
 
-            LCD_SetWindows(cur_x, cur_y + row, cur_x + (x_offset-1), cur_y + row);
+            LCD_SetWindows(cur_x, cur_y + row, cur_x + char_width - 1, cur_y + row);
             LCD_CS_CLR;
             LCD_RS_SET;
             SPI_SET_16BIT;
-            for (uint8_t col = 0; col < x_offset; col++)
+            for (uint8_t col = 0; col < char_width; col++)
                 SPI_TRANSMIT_16BIT(row_buf[col]);
             SPI_WAIT();
             SPI_SET_8BIT;
             LCD_CS_SET;
         }
 
-        cur_x += x_offset;
+        cur_x += char_width;
         p += consumed;
     }
 

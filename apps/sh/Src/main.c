@@ -117,14 +117,13 @@ int main(void)
   LCD_Init();
   
   SYS_Init();
-  SYS_Printf(0,0,WHITE,BLACK,"你好世界\nHello World!");
   /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
+	
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

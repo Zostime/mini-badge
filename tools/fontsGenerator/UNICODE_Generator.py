@@ -5,33 +5,37 @@ FONT_SIZE = 8                   # 字号
 OUTPUT_FILE = "UNICODE_DEFAULT_8x8"
 
 def unicode_bmp_chars():
-    """生成 Unicode 所有码位0x0000-0xFFFF, 代理区(0xD800-0xDFFF)填 None。"""
+    """生成 Unicode 所有码位 0x0000->0xFFFF,代理区填 None"""
     chars = []
-    for cp in range(0xFFFF + 1):   # 0 ~ 0xFFFF
+    for cp in range(0xFFFF + 1):
         if 0xD800 <= cp <= 0xDFFF:
             chars.append(None)
             continue
         try:
             ch = chr(cp)
-        except ValueError:      # 窄 Python 下无法生成代理对字符
+        except ValueError:
             ch = None
         chars.append(ch)
     return chars
 
+def get_char_width(char, font):
+    if char is None:
+        return 0
+    return int(font.getlength(char) + 0.5) 
+
 def render_char(char, font):
     """
     渲染单个字符为 8x8 纵向取模点阵，高位在下。
-    返回 8 字节数组, 每字节 bit7=最下像素, bit0=最上像素。
+    返回 8 字节数组，每字节 bit7=最下像素, bit0=最上像素。
     """
     if char is None:
         return bytearray(8)
 
-    # 创建 8x8 的二值图像，黑底白字
     img = Image.new("1", (8, 8), 0)
     draw = ImageDraw.Draw(img)
     draw.text((0, 0), char, font=font, fill=1)
 
-    data = bytearray(8)  # 8 列
+    data = bytearray(8)
     for y in range(8):
         for x in range(8):
             if img.getpixel((x, y)):
@@ -47,14 +51,15 @@ def main():
 
     chars = unicode_bmp_chars()
     total = len(chars)
-    undefined = chars.count(None)
-    print(f"码位总数：{total}，其中未定义/代理区：{undefined}")
+    print(f"码位总数：{total}")
 
     with open(OUTPUT_FILE, "wb") as f:
         for ch in chars:
-            bitmap = render_char(ch, font)
-            f.write(bitmap)
-        print(f"已写入 {total * 8} 字节 -> {OUTPUT_FILE}")
+            width = get_char_width(ch, font)
+            f.write(bytes([width]))          # 宽度 1 字节
+            f.write(render_char(ch, font))   # 点阵 8 字节
+        print(f"已写入 {total * 9} 字节 -> {OUTPUT_FILE}")
+        print("文件结构：每字符 9 字节 [宽度(1B) + 点阵(8B)]，按码点顺序排列")
 
 if __name__ == "__main__":
     main()

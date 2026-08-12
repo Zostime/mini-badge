@@ -163,6 +163,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>BOOT_SHARED-&gt;app_path</ItemText>
         </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>char_width</ItemText>
+        </Ww>
       </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>
