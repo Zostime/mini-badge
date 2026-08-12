@@ -69,33 +69,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void DisplayCharTxt(void)
-{
-
-    FIL file;
-    FRESULT res;
-    UINT br;
-    char buffer[1024];    // 可根据需要调整大小
-
-
-    res = f_open(&file, "0:/user/char.txt", FA_READ);
-    if (res != FR_OK) {
-        SYS_Printf(0, 0, WHITE, BLACK, "Open error: %d", res);
-        return;
-    }
-
-    // 3. 循环读取并显示
-    SYS_Printf(0, 0, WHITE, BLACK, "");   // 可选：先清空或初始化显示位置
-    while (1) {
-        res = f_read(&file, buffer, sizeof(buffer) - 1, &br);
-        if (res != FR_OK || br == 0) break;  // 读出错或结束
-
-        buffer[br] = '\0';                  // 添加字符串结束符
-        SYS_Printf(0, 0, WHITE, BLACK, "%s", buffer); // 直接输出原始数据
-    }
-
-    f_close(&file);
-}
 
 /* USER CODE END 0 */
 
@@ -145,7 +118,6 @@ int main(void)
   
   SYS_Init();
   /* USER CODE END 2 */
-  DisplayCharTxt();
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)

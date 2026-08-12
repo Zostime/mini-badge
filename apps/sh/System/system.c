@@ -89,12 +89,14 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         UINT br;
         f_read(&file_uni, col_data, 8, &br);
 
+		// 全半角字符
 		uint8_t x_offset = (
 			cp<=0x7F ||				    // ascii
 			(0xFF65<=cp&&cp<=0xFF9F) || // 日语半角片假名与标点
 			(0x400<=cp&&cp<=0x4FF) ||   // 西里尔字母
-			(0x370<=cp&&cp<=0x3FF)
-		) ? 6:8;
+			(0x370<=cp&&cp<=0x3FF)		// 希腊字母
+		) ? 6:8;                               
+		
         if (cur_x + x_offset > LCD_H) {
             cur_x = x;
             cur_y += 8;
