@@ -12,3 +12,18 @@ This is a tiny digital badge created by Zostime
 - **Timekeeping:** RTC real-time clock
 - **Debugging:** ST-Link programming interface
 - **Communication:** USART interface
+
+## Quick Start
+### Requirements
+- Mini Badge
+- TF Card (FAT32)
+- Keil MDK 5.42 or later
+- ST-Link V2
+- 4P 0.5mm FPC cable
+- 4P 0.5mm FPC connector
+
+### Steps
+1. Git clone [Mini-Badge](https://github.com/Zostime/Mini-Badge.git)
+2. Open `bootloader/MDK-ARM/Project.uvprojx` with Keil, build and flash.
+3. Copy `sdcard/` content to a TF card.
+4. Insert TF card, power on.
