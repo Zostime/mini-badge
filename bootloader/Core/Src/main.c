@@ -88,10 +88,12 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  #if !BOOTLOADER_DEBUG_MODE
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   SD_Init();
+  #endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,12 +101,19 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+	#if !BOOTLOADER_DEBUG_MODE
     if (f_mount(&sSDCARD_FatFs, "0:", 1) == FR_OK) {
 		char path[MAX_APP_PATH];
 		BOOTLOADER_READ_REQUEST_PATH(path);
 		if(path[0]!='0') strcpy(path,DEFAULT_APP_PATH);
 		Bootloader_Run(path);
     }
+	#else
+		char path[MAX_APP_PATH];
+		BOOTLOADER_READ_REQUEST_PATH(path);
+		if(path[0]!='0') strcpy(path,DEFAULT_APP_PATH);
+		Bootloader_Run(path);
+	#endif
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

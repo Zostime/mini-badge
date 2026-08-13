@@ -78,12 +78,11 @@ void Bootloader_Run(const char *path) {
 
     f_close(&file);
     HAL_FLASH_Lock();
-
-	#endif
 	f_mount(NULL, "0:", 1);
 	SPI1->CR1 = 0;
 	__HAL_RCC_SPI1_FORCE_RESET();
 	__HAL_RCC_SPI1_RELEASE_RESET();
+	#endif
 	
 	// 跳转到 APP
     Bootloader_JumpAddr(APP_ADDR);
