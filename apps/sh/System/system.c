@@ -49,8 +49,7 @@ static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp) {
     return len;
 }
 
-void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_color, const char *fmt, ...)
-{
+void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_color, const char *fmt, ...) {
     char buf[SYS_PRINT_BUFFER_SIZE];
     va_list args;
     va_start(args, fmt);

@@ -36,8 +36,10 @@
 #include "Power.h"
 #include "rtc_utils.h"
 #include "bootloader_api.h"
+#include "usbd_cdc_if.h"
 
 #include "system.h"
+#include "screen.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,13 +119,14 @@ int main(void)
   LCD_Init();
   
   SYS_Init();
+  screen_init();
   /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	
+	  
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

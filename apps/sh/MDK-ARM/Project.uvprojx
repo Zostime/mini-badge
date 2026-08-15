@@ -740,6 +740,16 @@
               <FileType>5</FileType>
               <FilePath>..\System\system.h</FilePath>
             </File>
+            <File>
+              <FileName>screen.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\System\screen.c</FilePath>
+            </File>
+            <File>
+              <FileName>screen.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\System\screen.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
