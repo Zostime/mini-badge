@@ -21,12 +21,34 @@ static int utf8_seq_len(unsigned char c) {
     if ((c & 0xF8) == 0xF0) return 4;
     return 1; // 非法字节按单字节处理
 }
+void screen_seek(long offset, int whence, int unit) {
+    if (unit == UNIT_BYTE) {
+        // 按字节偏移
+        long new_pos = 0;
+        switch (whence) {
+            case SEEK_SET:
+                new_pos = offset;
+                break;
+            case SEEK_CUR:
+                new_pos = (long)screen.offset + offset;
+                break;
+            case SEEK_END:
+                new_pos = (long)screen.length + offset;
+                break;
+            default:
+                return;
+        }
+        // 边界检查
+        if (new_pos < 0) new_pos = 0;
+        if (new_pos > (long)SCREEN_SIZE) new_pos = SCREEN_SIZE;
+        screen.offset = (size_t)new_pos;
 
-void screen_seek(long offset, int whence) {
-    long target_pos = 0;   // 目标字符位置
-    long cur_pos = 0;      // 当前字符位置
+    } else if (unit == UNIT_CHAR) {
+        // 按字符偏移(UTF-8码点)
+        long target_char = 0;   // 目标字符位置
+        long cur_char = 0;      // 当前字符位置
 
-    if (whence == SEEK_CUR) {
+        // 计算当前offset对应的字符位置
         size_t pos = 0;
         long count = 0;
         while (pos < screen.offset) {
@@ -34,41 +56,46 @@ void screen_seek(long offset, int whence) {
             pos += utf8_seq_len(c);
             count++;
         }
-        cur_pos = count;
-    }
+        cur_char = count;
 
-    switch (whence) {
-        case SEEK_SET:
-            target_pos = offset;
-            break;
-        case SEEK_CUR:
-            target_pos = cur_pos + offset;
-            break;
-        case SEEK_END: {
-            size_t pos = 0;
-            long total = 0;
-            while (pos < screen.length) {
-                unsigned char c = (unsigned char)screen.buf[pos];
-                pos += utf8_seq_len(c);
-                total++;
+        switch (whence) {
+            case SEEK_SET:
+                target_char = offset;
+                break;
+            case SEEK_CUR:
+                target_char = cur_char + offset;
+                break;
+            case SEEK_END: {
+                // 计算有效内容长度的字符数
+                size_t p = 0;
+                long total = 0;
+                while (p < screen.length) {
+                    unsigned char c = (unsigned char)screen.buf[p];
+                    p += utf8_seq_len(c);
+                    total++;
+                }
+                target_char = total + offset;
+                break;
             }
-            target_pos = total + offset;
-            break;
+            default:
+                return;
         }
-        default:
-            return;
+
+        if (target_char < 0) target_char = 0;
+        // 将目标字符位置转换为字节偏移
+        pos = 0;
+        count = 0;
+        while (pos < SCREEN_SIZE && count < target_char) {
+            unsigned char c = (unsigned char)screen.buf[pos];
+            pos += utf8_seq_len(c);
+            count++;
+        }
+        if (pos > SCREEN_SIZE) pos = SCREEN_SIZE;
+        screen.offset = pos;
+
+    } else {
+        return;
     }
-	
-    if (target_pos < 0) target_pos = 0;
-    size_t pos = 0;
-	long count = 0;
-	while (pos < SCREEN_SIZE && count < target_pos) {
-		unsigned char c = (unsigned char)screen.buf[pos];
-		pos += utf8_seq_len(c);
-		count++;
-	}
-	if (pos > SCREEN_SIZE) pos = SCREEN_SIZE;
-	screen.offset = pos;
 }
 
 void screen_puts(char *str) {

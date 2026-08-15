@@ -57,7 +57,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
-
+          
     FIL file_uni;
     if (f_open(&file_uni, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK)
         return;
@@ -215,4 +215,9 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     }
 
     f_close(&file_uni);
+}
+
+
+void SYS_ShellExecute(char *cmd) {
+
 }

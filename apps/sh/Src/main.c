@@ -60,13 +60,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t cdc_rx_buf[SYS_CMD_SIZE];
+volatile uint8_t cdc_rx_ready = 0;
+uint16_t cdc_rx_len = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+int CDC_ReadLine(char *buf, int size);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,16 +120,42 @@ int main(void)
   Power_Init();
   LCD_Init();
   
-  SYS_Init();
   screen_init();
+  SYS_Init();
+  screen_seek(0, SEEK_SET, UNIT_CHAR);
+  screen_puts("Mini-Badge Shell\n");
+  screen_puts("Copyright (C) Zostime. Released under MIT License.\n\n");
   /* USER CODE END 2 */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  char cur_path[MAX_APP_PATH] = "0:/root";
+  size_t cur_offset = screen.offset;
   while (1)
   {
-    /* USER CODE END WHILE */
+    /* USER CODE END WHILE */	     
 	  
     /* USER CODE BEGIN 3 */
+	screen_seek(cur_offset, SEEK_SET, UNIT_BYTE);
+	/* 显示路径与提示符 */ {	
+		char display_path[MAX_APP_PATH];
+		if (strncmp(cur_path, "0:/root", 7) == 0) {
+			snprintf(display_path, sizeof(display_path), "~%s", cur_path + 7);
+		} else {
+			snprintf(display_path, sizeof(display_path), "%s", cur_path);
+		}
+		screen_printf("\033[37m%s\033[31m#\033[0m ",display_path);
+	}
+	SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
+	
+	/* INPUT */ {
+		char cmd[SYS_CMD_SIZE];
+		if (CDC_ReadLine(cmd, sizeof(cmd)) > 0) {
+			screen_printf("%s\n",cmd);
+			SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
+			cur_offset = screen.offset;
+			SYS_ShellExecute(cmd);
+		}
+	}
   }
   /* USER CODE END 3 */
 }
@@ -183,7 +211,31 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+int CDC_ReadLine(char *buf, int size)
+{
+    int idx = 0;
+    while(1) {
+        if(cdc_rx_ready) {
+            cdc_rx_ready = 0;
 
+            for(int i = 0; i < cdc_rx_len && idx < size - 1; i++) {
+                char c = cdc_rx_buf[i];
+                if(c == '\r' || c == '\n') {
+                    buf[idx] = '\0';
+                    return idx;
+                }
+                else if (c == 8 || c == 127) {
+                    if(idx > 0) idx--;
+                }
+                else {
+                    buf[idx++] = c;
+                }
+            }
+            buf[idx] = '\0';
+            return idx;
+        }
+    }
+}
 /* USER CODE END 4 */
 
 /**

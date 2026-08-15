@@ -22,7 +22,8 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "system.h"
+#include <string.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -259,6 +260,16 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+  extern uint8_t cdc_rx_buf[SYS_CMD_SIZE];       
+  extern volatile uint8_t cdc_rx_ready;
+  extern uint16_t cdc_rx_len;
+
+  if (*Len <= sizeof(cdc_rx_buf)) {
+      memcpy(cdc_rx_buf, Buf, *Len);
+      cdc_rx_len = *Len;
+      cdc_rx_ready = 1;
+  }
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
