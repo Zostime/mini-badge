@@ -5,6 +5,8 @@
 #include "bootloader_api.h"
 #include <stdarg.h>
 #include <stdio.h>    
+#include <stdlib.h>
+#include "screen.h"
 
 FATFS sSDCARD_FatFs;
 void SYS_Init(void) {
@@ -59,6 +61,9 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     FIL file_uni;
     if (f_open(&file_uni, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK)
         return;
+	
+	uint16_t cur_fg = color;            // 默认前景色
+	uint16_t cur_bg = background_color; // 默认背景色
 
     uint16_t cur_x = x, cur_y = y;
     const uint8_t *p = (const uint8_t *)buf;
@@ -66,6 +71,75 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
     while (p < end && *p)
     {
+		if (*p == 0x1B)	{	// ESC               
+			p++;
+			if (*p == '[') {
+				p++;
+				char num_buf[8];
+				int i = 0;
+				while (p < end && *p != 'm' && i < 7) {
+					num_buf[i++] = *p++;
+				}
+				num_buf[i] = '\0';
+				if (*p == 'm') p++;    
+
+				int color_code = atoi(num_buf);   // 颜色代码->整数
+
+				switch (color_code)
+				{
+					case 0:    // 重置
+						cur_fg = color;
+						cur_bg = background_color;
+						break;
+
+					// 前景色 30~37
+					case 30: cur_fg = BLACK;   break;
+					case 31: cur_fg = RED;     break;
+					case 32: cur_fg = GREEN;   break;
+					case 33: cur_fg = YELLOW;  break;
+					case 34: cur_fg = BLUE;    break;
+					case 35: cur_fg = MAGENTA; break;
+					case 36: cur_fg = CYAN;    break;
+					case 37: cur_fg = WHITE;   break;
+
+					// 亮前景色 90~97
+					case 90: cur_fg = BRIGHT_BLACK;   break;
+					case 91: cur_fg = BRIGHT_RED;     break;
+					case 92: cur_fg = BRIGHT_GREEN;   break;
+					case 93: cur_fg = BRIGHT_YELLOW;  break;
+					case 94: cur_fg = BRIGHT_BLUE;    break;
+					case 95: cur_fg = BRIGHT_MAGENTA; break;
+					case 96: cur_fg = BRIGHT_CYAN;    break;
+					case 97: cur_fg = BRIGHT_WHITE;   break;
+
+					// 背景色 40~47
+					case 40: cur_bg = BLACK;   break;
+					case 41: cur_bg = RED;     break;
+					case 42: cur_bg = GREEN;   break;
+					case 43: cur_bg = YELLOW;  break;
+					case 44: cur_bg = BLUE;    break;
+					case 45: cur_bg = MAGENTA; break;
+					case 46: cur_bg = CYAN;    break;
+					case 47: cur_bg = WHITE;   break;
+
+					// 亮背景色 100~107
+					case 100: cur_bg = BRIGHT_BLACK;   break;
+					case 101: cur_bg = BRIGHT_RED;     break;
+					case 102: cur_bg = BRIGHT_GREEN;   break;
+					case 103: cur_bg = BRIGHT_YELLOW;  break;
+					case 104: cur_bg = BRIGHT_BLUE;    break;
+					case 105: cur_bg = BRIGHT_MAGENTA; break;
+					case 106: cur_bg = BRIGHT_CYAN;    break;
+					case 107: cur_bg = BRIGHT_WHITE;   break;
+
+					default:
+						// 未知颜色码
+						break;
+				}
+			}
+			continue; 
+		}
+		
 		if (*p == '\r') {
 			p++;
 			continue;
@@ -120,9 +194,9 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
             uint16_t row_buf[8];
             for (uint8_t col = 0; col < char_width; col++) {
                 if (col_data[col] & (0x01 << row))
-                    row_buf[col] = color;
+                    row_buf[col] = cur_fg;
                 else
-                    row_buf[col] = background_color;
+                    row_buf[col] = cur_bg;
             }
 
             LCD_SetWindows(cur_x, cur_y + row, cur_x + char_width - 1, cur_y + row);
