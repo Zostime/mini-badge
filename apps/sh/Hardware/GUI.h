@@ -34,7 +34,4 @@ void GUI_DrawCircle(uint16_t xc, uint16_t yc, int r, uint16_t color);
 void GUI_DrawTriangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Color);
 void GUI_FillTriangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color);
 
-/* TEMP */
-void GUI_Printf(uint16_t x, uint16_t y,uint16_t color, uint16_t background_color, const char *fmt, ...);
-
 #endif

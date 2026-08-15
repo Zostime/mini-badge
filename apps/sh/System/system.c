@@ -216,8 +216,3 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
     f_close(&file_uni);
 }
-
-
-void SYS_ShellExecute(char *cmd) {
-
-}
