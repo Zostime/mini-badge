@@ -88,6 +88,16 @@ void screen_appends(char *str) {
 	screen.offset = screen.length;
 	screen_puts(str);
 }
+
+void screen_printf(const char *format, ...) {
+    char tmp[SCREEN_PRINTF_BUFSIZ];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(tmp, sizeof(tmp), format, args);
+    va_end(args);
+    screen_puts(tmp);
+}
+
 char *screen_gets(char *str, int n) {
     if (screen.offset >= screen.length || n <= 0) {
         return NULL;
@@ -101,3 +111,4 @@ char *screen_gets(char *str, int n) {
     str[i] = '\0';
     return str;
 }
+
