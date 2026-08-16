@@ -41,26 +41,19 @@ int CDC_ReadLine(char *buf, int size) {
     }
 }
 
-void path_normalize(const char *src, char *dst) {
-    char stack[SH_MAX_PATH]; 
-    char tmp[SH_MAX_PATH];
-    char *token;
+static bool path_normalize(const char *src, char *dst)
+{
+    if (strncmp(src, "0:", 2) != 0) return false;
 
-    // 保留"0:"前缀
-    if (strncmp(src, "0:", 2) != 0) return;
-    dst[0] = '0'; dst[1] = ':';
-    dst += 2;
+    char stack[SH_MAX_PATH] = {0};
+    char temp[SH_MAX_PATH];
+    strcpy(temp, src + 2);   // 跳过 "0:"
+    if (temp[0] == '\0') strcpy(temp, "/");
 
-    strcpy(tmp, src + 2);
-    // 如果路径为空则设为"/"
-    if (tmp[0] == '\0') {
-        strcpy(tmp, "/");
-    }
-
-    stack[0] = '\0';
-    token = strtok(tmp, "/");
+    char *token = strtok(temp, "/");
     while (token) {
         if (strcmp(token, ".") == 0) {
+            // 忽略
         } else if (strcmp(token, "..") == 0) {
             char *last = strrchr(stack, '/');
             if (last) *last = '\0';
@@ -73,10 +66,11 @@ void path_normalize(const char *src, char *dst) {
     }
 
     if (stack[0] == '\0') {
-        strcpy(dst - 2, "0:/");    // 回到根目录
+        strcpy(dst, "0:/");      // 根目录统一为"0:/"
     } else {
-        snprintf(dst - 2, SH_MAX_PATH - (dst - 2 - dst), "0:/%s", stack);
+        snprintf(dst, SH_MAX_PATH, "0:/%s", stack);
     }
+    return true;
 }
 
 /**
@@ -86,14 +80,24 @@ void path_normalize(const char *src, char *dst) {
  * @param  out: 输出规范路径，容量至少 MAX_PATH
  * @retval 是否成功
  */
-void path_expand(const char *input, const char *cur, char *out) {
+bool path_expand(const char *input, const char *cur, char *out)
+{
     char temp[SH_MAX_PATH];
 
-    // 处理 home 简写 "~"
-    if (input[0] == '~') {
-        snprintf(temp, sizeof(temp), "%s%s", HOME_PATH, input + 1);
+    if (input[0] == '\0') {
+        strcpy(out, cur);
+        return true;
     }
-    // 绝对路径
+
+    // 处理home简写 "~"
+    if (input[0] == '~') {
+        snprintf(temp, sizeof(temp), "0:/root%s", input + 1);
+    }
+    // 处理完整路径
+    else if (input[0] == '0' && input[1] == ':') {
+        snprintf(temp, sizeof(temp), "%s", input); 
+    }
+    // 处理绝对路径
     else if (input[0] == '/') {
         snprintf(temp, sizeof(temp), "0:%s", input);
     }
@@ -106,8 +110,7 @@ void path_expand(const char *input, const char *cur, char *out) {
         }
     }
 
-    // 规范化路径: 处理".",".."
-    path_normalize(temp, out);
+    return path_normalize(temp, out);
 }
 
 /**
