@@ -11,6 +11,8 @@
 #include "system.h"
 #include "screen.h"
 
+#include <stdbool.h>
+
 uint8_t cdc_rx_buf[SH_CMD_SIZE];
 volatile uint8_t cdc_rx_ready = 0;
 uint16_t cdc_rx_len = 0;
@@ -76,6 +78,7 @@ void path_normalize(const char *src, char *dst) {
         snprintf(dst - 2, SH_MAX_PATH - (dst - 2 - dst), "0:/%s", stack);
     }
 }
+
 /**
  * @brief  展开用户输入的路径为规范绝对路径
  * @param  input: 路径字符串
@@ -106,23 +109,81 @@ void path_expand(const char *input, const char *cur, char *out) {
     // 规范化路径: 处理".",".."
     path_normalize(temp, out);
 }
+
 /**
- * @brief  解析命令行字符串
- * @param  cmdline: 输入的命令行字符串
-* @param  argv: 输出参数数组, argv[0] 为命令, 后续为参数, 末尾为哨兵
- * @param  max_args: 最大参数个数 (包括命令和哨兵)
- * @retval 实际分割出的参数个数
+ * @brief  解析命令行, 支持引号, 转义, 变量展开
+ * @param  cmd :输入命令字符串
+ * @param  argv :输出参数数组，末尾为 NULL
+ * @param  max_args :最大参数个数 (含命令和 NULL 哨兵)
+ * @retval 实际参数个数
  */
-int shell_parse(char *cmd, char *argv[], int max_args) {
+int shell_parse(char *cmd, char *argv[], int max_args)
+{
     int argc = 0;
-    char *token = strtok(cmd, " \t\n");   // ' ','\t','\n'作为分隔符
-    while (token != NULL && argc < max_args) {
-        argv[argc++] = token;
-        token = strtok(NULL, " \t\n");
+    char *src = cmd;      // 源指针
+    char *dst = cmd;      // 目标指针（原地写入）
+    int in_squote = 0;
+    int in_dquote = 0;
+    int token_started = 0;
+
+    while (*src)
+    {
+        char c = *src;
+
+        // 反斜杠转义
+        if (c == '\\' && !in_squote) {
+            src++;
+            if (*src == '\0') break;
+            if (!token_started) {
+                argv[argc++] = dst;   // 记录 token 起始位置
+                token_started = 1;
+            }
+            *dst++ = *src++;          // 复制被转义的字符
+            continue;
+        }
+
+        // 双引号
+        if (c == '"' && !in_squote) {
+            in_dquote = !in_dquote;
+            src++;
+            continue;
+        }
+
+        // 单引号
+        if (c == '\'' && !in_dquote) {
+            in_squote = !in_squote;
+            src++;
+            continue;
+        }
+
+        // 分隔符
+        if ((c == ' ' || c == '\t' || 
+			c == '\r' || c == '\n') &&
+            !in_squote && !in_dquote) 
+			{
+            if (token_started) {
+                *dst++ = '\0';	// 写入结束符并跳过
+                token_started = 0;
+            }
+            src++;
+            continue;
+        }
+
+        // 普通字符
+        if (!token_started) {
+            argv[argc++] = dst;	// 记录新 token 起始位置
+            token_started = 1;
+        }
+        *dst++ = c;
+        src++;
     }
-	argv[argc] = NULL;  // 结束标记
+
+    if (token_started) *dst='\0';
+
+    argv[argc] = NULL;
     return argc;
 }
+
 void Shell_Init(void) {
 	screen_init();
 	SYS_Init();
@@ -199,7 +260,62 @@ void Shell_Run(void) {
 				}
 				else if(!strcmp(argv[0], "echo")) 
 				{
-				
+					bool option_end = false;
+					bool newline = true;
+					bool interpret_escapes = false;
+					for(size_t i=1; i < argc; i++) {
+						bool unknown_option = false;
+						bool arg_parsing = false;
+						if(argv[i][0]=='-' && argv[i][1]!='\0' && !option_end) {
+							arg_parsing = true;
+							if(!strcmp(argv[i], "--")) {option_end = true; continue;}
+							bool _newline = newline;
+							bool _interpret_escapes = interpret_escapes;
+							size_t arglen = strlen(argv[i]);
+							for(size_t j=1;j < arglen; j++) {
+								switch(argv[i][j]) {
+									case 'n': _newline=false; continue;
+									case 'e': _interpret_escapes=true; continue;
+									case 'E': _interpret_escapes=false; continue;
+								}
+								unknown_option = true;
+								option_end = true;
+								break;
+							}
+							if(!unknown_option) {
+								newline = _newline;
+								interpret_escapes = _interpret_escapes;
+							}
+						}
+						if(!arg_parsing || unknown_option) {
+							option_end = true;
+						    if(interpret_escapes) {						
+								for(const char *p = argv[i]; *p; p++) {
+									if(*p == '\\') {
+										if(p[1] == '\0') {screen_puts("\\"); break;}
+										p++;
+										switch (*p) {
+											case 'n':  screen_puts("\n"); break;
+											case 't':  screen_puts("\t"); break;
+											case 'r':  screen_puts("\r"); break;
+											case '\\': screen_puts("\\"); break;
+
+											default: 
+												screen_putc('\\');  
+												screen_putc(*p); 
+												break; // 未知转义
+										}
+									}
+									else screen_putc(*p); 
+								}
+							}
+							else screen_puts(argv[i]);
+							if(i < argc-1) screen_puts(" ");
+						}
+					}
+					if(newline) screen_puts("\n");
+					cur_offset = screen.offset;
+					continue;
 				}
 				// ...
 				else	// 外部命令 

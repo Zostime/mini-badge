@@ -18,6 +18,7 @@ extern screen_t screen;
 
 void screen_init(void);
 void screen_seek(long offset, int whence, int unit);
+void screen_putc(char c);
 void screen_puts(char *str);
 void screen_appends(char *str);
 void screen_printf(const char *format, ...);

@@ -98,19 +98,26 @@ void screen_seek(long offset, int whence, int unit) {
     }
 }
 
+void screen_putc(char c) {
+	if(screen.offset >= SCREEN_SIZE) return;
+    screen.buf[screen.offset++] = c;
+    if(screen.offset > screen.length) {
+        screen.length = screen.offset;
+    }
+}
+
 void screen_puts(char *str) {
-	while (*str && screen.offset < SCREEN_SIZE) {
-		screen.buf[screen.offset++] = *str++;
-		if (screen.offset > screen.length) {
-			screen.length = screen.offset;
-		}
-	}
+	while(*str) {
+		screen_putc(*str++);
+    }
 	if (screen.length < SCREEN_SIZE) {
         screen.buf[screen.length] = '\0';
-    } else {
+    }
+	else {
         screen.buf[SCREEN_SIZE - 1] = '\0';
     }
 } 
+
 void screen_appends(char *str) {
 	screen.offset = screen.length;
 	screen_puts(str);
