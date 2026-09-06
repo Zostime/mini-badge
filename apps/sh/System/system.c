@@ -19,7 +19,7 @@ void SYS_Init(void) {
             SD_res = f_mount(&sSDCARD_FatFs, "0:", 1);
         }
     }    
-    
+
     LCD_Clear(BLACK);
     LCD_SetBrightness(1000);
 }

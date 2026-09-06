@@ -111,7 +111,7 @@ int main(void)
   Buzzer_Init(); 
   Power_Init();
   LCD_Init();
-  
+
   Shell_Init();
   Shell_Run();
   /* USER CODE END 2 */

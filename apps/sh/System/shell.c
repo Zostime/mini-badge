@@ -10,6 +10,7 @@
 #include "shell.h"
 #include "system.h"
 #include "screen.h"
+#include "env.h"
 
 #include <stdbool.h>
 
@@ -80,8 +81,7 @@ static bool path_normalize(const char *src, char *dst)
  * @param  out: 输出规范路径，容量至少 MAX_PATH
  * @retval 是否成功
  */
-bool path_expand(const char *input, const char *cur, char *out)
-{
+bool path_expand(const char *input, const char *cur, char *out) {
     char temp[SH_MAX_PATH];
 
     if (input[0] == '\0') {
@@ -91,7 +91,7 @@ bool path_expand(const char *input, const char *cur, char *out)
 
     // 处理home简写 "~"
     if (input[0] == '~') {
-        snprintf(temp, sizeof(temp), "0:/root%s", input + 1);
+        snprintf(temp, sizeof(temp), "%s%s", env_getenv("HOME"), input + 1);
     }
     // 处理完整路径
     else if (input[0] == '0' && input[1] == ':') {
@@ -114,58 +114,130 @@ bool path_expand(const char *input, const char *cur, char *out)
 }
 
 /**
- * @brief  解析命令行, 支持引号, 转义, 变量展开
- * @param  cmd :输入命令字符串
- * @param  argv :输出参数数组，末尾为 NULL
- * @param  max_args :最大参数个数 (含命令和 NULL 哨兵)
+ * @brief  展开命令字符串中的环境变量
+ * @param  src: 原始输入字符串
+ * @param  dst: 展开后的输出缓冲区
+ * @param  dst_size: 输出缓冲区大小
+ * @retval 展开后字符串长度, -1 表示缓冲区不足
+ */
+int shell_expand_vars(const char *src, char *dst, size_t dst_size)
+{
+    size_t si = 0;  // 源索引
+    size_t di = 0;  // 目标索引
+
+    if (dst_size == 0) return -1;
+
+    while (src[si] != '\0') {
+        char c = src[si];
+
+        // 处理变量展开
+        if (c == '$') {
+            si++;
+            char var_name[ENV_NAME_MAX];
+            size_t name_len = 0;
+
+            // ${VAR}
+            if (src[si] == '{') {
+                si++;
+                while (src[si] != '\0' && src[si] != '}' && name_len < ENV_NAME_MAX - 1) {
+                    var_name[name_len++] = src[si++];
+                }
+                if (src[si] == '}') si++;
+            } else {
+                // $VAR
+                while ((src[si] == '_') ||
+                       (src[si] >= 'A' && src[si] <= 'Z') ||
+                       (src[si] >= 'a' && src[si] <= 'z') ||
+                       (src[si] >= '0' && src[si] <= '9'))
+                {
+                    if (name_len < ENV_NAME_MAX - 1) {
+                        var_name[name_len++] = src[si];
+                    }
+                    si++;
+                }
+            }
+            var_name[name_len] = '\0';
+
+            const char *val = (name_len > 0) ? env_getenv(var_name) : NULL;
+            if (val != NULL) {
+                // 拷贝变量值到输出缓冲区
+                while (*val != '\0') {
+                    if (di >= dst_size - 1) {
+                        dst[di] = '\0';
+                        return -1; // 缓冲区不足
+                    }
+                    dst[di++] = *val++;
+                }
+            }
+            continue;
+        }
+
+        if (di >= dst_size - 1) {
+            dst[di] = '\0';
+            return -1;
+        }
+        dst[di++] = c;
+        si++;
+    }
+
+    dst[di] = '\0';
+    return (int)di;
+}
+
+/**
+ * @brief  解析命令行, 支持引号, 转义
+ * @param  cmd: 输入命令字符串
+ * @param  argv: 输出参数数组，末尾为 NULL
+ * @param  max_args: 最大参数个数 (含命令和 NULL 哨兵)
  * @retval 实际参数个数
  */
-int shell_parse(char *cmd, char *argv[], int max_args)
-{
+int shell_parse(char *cmd, char *argv[], int max_args) {
     int argc = 0;
-    char *src = cmd;      // 源指针
-    char *dst = cmd;      // 目标指针（原地写入）
+    char *src = cmd;
+    char *dst = cmd;
     int in_squote = 0;
     int in_dquote = 0;
     int token_started = 0;
 
-    while (*src)
+    extern const char *env_getenv(const char *name);
+
+    while(*src && (dst - cmd) < SH_CMD_SIZE - 1)
     {
         char c = *src;
 
         // 反斜杠转义
-        if (c == '\\' && !in_squote) {
+        if(c == '\\' && !in_squote) {
             src++;
-            if (*src == '\0') break;
-            if (!token_started) {
-                argv[argc++] = dst;   // 记录 token 起始位置
+            if(*src == '\0') break;
+            if(!token_started) {
+                if (argc < max_args - 1) argv[argc++] = dst;
                 token_started = 1;
             }
-            *dst++ = *src++;          // 复制被转义的字符
+            if((dst - cmd) < SH_CMD_SIZE - 1) *dst++ = *src;
+            src++;
             continue;
         }
 
         // 双引号
-        if (c == '"' && !in_squote) {
+        if(c == '"' && !in_squote) {
             in_dquote = !in_dquote;
             src++;
             continue;
         }
 
         // 单引号
-        if (c == '\'' && !in_dquote) {
+        if(c == '\'' && !in_dquote) {
             in_squote = !in_squote;
             src++;
             continue;
         }
 
         // 分隔符
-        if ((c == ' ' || c == '\t' || 
-			c == '\r' || c == '\n') &&
-            !in_squote && !in_dquote) 
-			{
-            if (token_started) {
-                *dst++ = '\0';	// 写入结束符并跳过
+        if((c == ' ' || c == '\t' || c == '\r' || c == '\n') &&
+            !in_squote && !in_dquote)
+        {
+            if(token_started) {
+                if((dst - cmd) < SH_CMD_SIZE - 1) *dst++ = '\0';
                 token_started = 0;
             }
             src++;
@@ -173,16 +245,15 @@ int shell_parse(char *cmd, char *argv[], int max_args)
         }
 
         // 普通字符
-        if (!token_started) {
-            argv[argc++] = dst;	// 记录新 token 起始位置
+        if(!token_started) {
+            if(argc < max_args - 1) argv[argc++] = dst;
             token_started = 1;
         }
-        *dst++ = c;
+        if((dst - cmd) < SH_CMD_SIZE - 1) *dst++ = c;
         src++;
     }
 
-    if (token_started) *dst='\0';
-
+    if(token_started && (dst - cmd) < SH_CMD_SIZE - 1) *dst = '\0';
     argv[argc] = NULL;
     return argc;
 }
@@ -190,6 +261,7 @@ int shell_parse(char *cmd, char *argv[], int max_args)
 void Shell_Init(void) {
 	screen_init();
 	SYS_Init();
+	env_init();
 }
 
 void Shell_Run(void) {
@@ -225,8 +297,11 @@ void Shell_Run(void) {
 				cur_offset = screen.offset;
 
 				/* Shell */
+				char expanded[SH_CMD_SIZE];
+				shell_expand_vars(input, expanded, sizeof(expanded));
+									
 				char *argv[SH_MAX_ARGS+2];
-				int argc = shell_parse(input, argv, SH_MAX_ARGS+2);
+				int argc = shell_parse(expanded, argv, SH_MAX_ARGS+2);
 				if(!argc) continue; // 无命令
 				// 内建命令
 				if(!strcmp(argv[0], "cd")) 
