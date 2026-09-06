@@ -398,9 +398,62 @@ void Shell_Run(void) {
 				// ...
 				else	// 外部命令 
 				{ 
-				
-				}		
-			}
+					// 由路径跳转到exe
+					char new_path[SH_MAX_PATH];
+					if(path_expand(argv[0], cur_path, new_path)) {
+						DIR dir;
+						FIL file;
+						if(f_open(&file, new_path, FA_READ) == FR_OK) {
+							f_close(&file);
+							// JMP exe
+							BOOTLOADER_REQUEST_APP(new_path);
+						} 
+						else {
+							if (f_opendir(&dir, new_path) == FR_OK) {
+								f_closedir(&dir);
+								screen_printf("%s: Is a directory\n", argv[0]);
+							} 
+						}						
+					}
+					// 由PATH跳转到exe
+					const char *path_env = env_getenv("PATH");
+					if (path_env && *path_env) {
+						char path_copy[SH_MAX_PATH];
+						strncpy(path_copy, path_env, sizeof(path_copy) - 1);
+						path_copy[sizeof(path_copy) - 1] = '\0';
+
+						char *dir = path_copy;   
+						while (dir && *dir) {
+							// 查找下一个冒号
+							char *colon = strchr(dir, ':');
+							if (colon) {
+								*colon = '\0';         
+							}
+
+							// 忽略空目录
+							if (*dir != '\0') {
+								char candidate[SH_MAX_PATH];
+								snprintf(candidate, sizeof(candidate), "%s/%s", dir, argv[0]);
+
+								if (path_expand(candidate, cur_path, new_path)) {
+									FIL file;
+									if (f_open(&file, new_path, FA_READ) == FR_OK) {
+										f_close(&file);
+										BOOTLOADER_REQUEST_APP(new_path);
+										break;
+									}
+								}
+							}
+
+							if (!colon) break;        
+							dir = colon + 1;
+						}
+					}
+					screen_printf("%s: command not found\n", argv[0]);
+					cur_offset = screen.offset;
+					continue;
+				}
+			}		
 		}
 	}
 }
