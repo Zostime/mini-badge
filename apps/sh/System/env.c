@@ -112,3 +112,25 @@ int env_set(const char *name, const char *value)
     env_count++;
     return 0;
 }
+
+/**
+ * @brief  删除环境变量
+ * @param  name: 变量名
+ * @retval 0 = 成功, -1 = 变量不存在
+ */
+int env_unset(const char *name)
+{
+    for(int i=0; i < env_count; i++) {
+        if(strcmp(env_table[i].name, name) == 0) {
+            // 将后续元素前移
+            for(int j=i; j < env_count-1; j++) {
+                env_table[j] = env_table[j+1];
+            }
+            env_count--;
+            // 清空最后一个元素
+            memset(&env_table[env_count], 0, sizeof(env_var_t));
+            return 0;
+        }
+    }
+    return -1;
+}

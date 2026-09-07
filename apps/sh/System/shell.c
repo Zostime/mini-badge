@@ -405,7 +405,9 @@ void Shell_Run(void) {
 				}
 				else if(!strcmp(argv[0], "unset")) 
 				{
-					screen_putc('\n');
+					for(size_t i=1; i < argc; i++) {
+						env_unset(argv[i]);
+					}
 					cur_offset = screen.offset;
 					continue;
 				}

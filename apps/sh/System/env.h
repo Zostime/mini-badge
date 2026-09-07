@@ -14,5 +14,6 @@ typedef struct {
 void env_init(void);
 const char *env_getenv(const char *name);
 int env_set(const char *name, const char *value);
+int env_unset(const char *name);
 
 #endif
