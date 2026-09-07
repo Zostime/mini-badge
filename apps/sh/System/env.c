@@ -6,9 +6,9 @@ static env_var_t env_table[ENV_MAX];
 static int env_count = 0;
 
 /**
- * @brief  从指定文件加载环境变量（格式：KEY="value"，支持 # 注释）
- * @param  path : 文件路径，例如 "0:/etc/environment"
- * @retval 成功加载的变量数，负数表示错误
+ * @brief  从指定文件加载环境变量(格式：KEY="value",支持 #注释)
+ * @param  path: 文件路径，例如 "0:/etc/environment"
+ * @retval 成功加载的变量数, 负数表示错误
  */
 int env_load(const char *path)
 {
@@ -73,6 +73,7 @@ void env_init(void)
 	env_set("USER", "root");
     env_set("HOME", "0:/root");
     env_set("TERM", "Mini-Badge");
+	env_set("PWD", "0:/root");
 	env_load("0:/etc/environment");	// PATH
 }
 

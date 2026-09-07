@@ -274,15 +274,16 @@ void Shell_Run(void) {
 	{   
 		screen_seek(cur_offset, SEEK_SET, UNIT_BYTE);
 		/* 显示路径与提示符 */ {	
+			const char *pwd = env_getenv("PWD");
 			char display_path[MAX_APP_PATH];
-			if (strncmp(cur_path, "0:/root", 7) == 0) {
-				snprintf(display_path, sizeof(display_path), "~%s", cur_path + 7);
+			if (strncmp(pwd, "0:/root", 7) == 0) {
+				snprintf(display_path, sizeof(display_path), "~%s", pwd + 7);
 			} else {
 				// 去掉开头"0:", 只显示'/'和其余部分
-				if (strncmp(cur_path, "0:", 2) == 0) {
-					snprintf(display_path, sizeof(display_path), "%s", cur_path + 2);
+				if (strncmp(pwd, "0:", 2) == 0) {
+					snprintf(display_path, sizeof(display_path), "%s", pwd + 2);
 				} else {
-					snprintf(display_path, sizeof(display_path), "%s", cur_path);
+					snprintf(display_path, sizeof(display_path), "%s", pwd);
 				}
 			}
 			screen_printf("\033[37m%s\033[31m#\033[0m ", display_path);
@@ -324,6 +325,7 @@ void Shell_Run(void) {
 					if (f_opendir(&dir, new_path) == FR_OK) {
 						f_closedir(&dir);
 						strcpy(cur_path, new_path);
+						env_set("PWD", new_path); 
 					} 
 					else {
 						FIL file;
@@ -398,6 +400,12 @@ void Shell_Run(void) {
 				else if(!strcmp(argv[0], "pwd")) 
 				{
 					screen_printf("%s\n", cur_path);
+					cur_offset = screen.offset;
+					continue;
+				}
+				else if(!strcmp(argv[0], "unset")) 
+				{
+					screen_putc('\n');
 					cur_offset = screen.offset;
 					continue;
 				}
