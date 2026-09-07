@@ -395,6 +395,12 @@ void Shell_Run(void) {
 					cur_offset = screen.offset;
 					continue;
 				}
+				else if(!strcmp(argv[0], "pwd")) 
+				{
+					screen_printf("%s\n", cur_path);
+					cur_offset = screen.offset;
+					continue;
+				}
 				// ...
 				else	// 外部命令 
 				{ 
