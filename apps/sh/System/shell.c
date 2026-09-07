@@ -426,6 +426,8 @@ void Shell_Run(void) {
 							if (f_opendir(&dir, new_path) == FR_OK) {
 								f_closedir(&dir);
 								screen_printf("%s: Is a directory\n", argv[0]);
+								cur_offset = screen.offset;
+								continue;
 							} 
 						}						
 					}
