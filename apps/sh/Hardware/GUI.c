@@ -1,4 +1,3 @@
-#include "ST7789V.h"
 #include "string.h"
 #include "gui.h"
 #include <stdarg.h>

@@ -81,9 +81,16 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 					num_buf[i++] = *p++;
 				}
 				num_buf[i] = '\0';
-				if (*p == 'm') p++;    
+				if (*p == 'm') p++;   
 
-				int color_code = atoi(num_buf);   // 颜色代码->整数
+				// atoi START (int color_code = atoi(num_buf);)
+				int color_code = 0;
+				int j = 0;
+				while (num_buf[j] >= '0' && num_buf[j] <= '9') {
+					color_code = color_code * 10 + (num_buf[j] - '0');
+					j++;
+				}
+				// END 颜色代码->整数, 不知道为什么这里使用stdlib.h的atoi会持续输出0
 
 				switch (color_code)
 				{
@@ -183,11 +190,11 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         }
 
         // 自动换行判断
-        if (cur_x + char_width > LCD_H) {
+        if (cur_x + char_width > SYS_SCREEN_W) {
             cur_x = x;
             cur_y += 8;
         }
-        if (cur_y + 8 > LCD_W) break;
+        if (cur_y + 8 > SYS_SCREEN_H) break;
 
         // 逐行批量发送像素 (纵向取模高位在下)
         for (uint8_t row = 0; row < 8; row++) {
@@ -215,4 +222,45 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     }
 
     f_close(&file_uni);
+}
+
+uint16_t SYS_GetStrWidth(const char *str) {
+    FIL font_file;
+    if (f_open(&font_file, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK) {
+        return 0;
+    }
+
+    uint16_t total_width = 0;
+    const uint8_t *p = (const uint8_t *)str;
+    const uint8_t *end = (const uint8_t *)(str + strlen(str));
+
+    while (p < end) {
+        uint32_t cp;
+        int consumed = utf8_decode(p, end, &cp);
+        if (consumed <= 0) {
+            // 非法字节，按 1 字节跳过
+            p++;
+            continue;
+        }
+
+        // 忽略控制字符和换行符的宽度
+        if (cp < 0x20) {
+            p += consumed;
+            continue;
+        }
+
+        // 读取该字符的宽度
+        f_lseek(&font_file, (DWORD)cp * 9);
+        uint8_t width_byte;
+        UINT br;
+        if (f_read(&font_file, &width_byte, 1, &br) == FR_OK && br == 1) {
+            total_width += width_byte;
+        }
+        // 如果读取失败, 该字符宽度按 0 处理
+
+        p += consumed;
+    }
+
+    f_close(&font_file);
+    return total_width;
 }

@@ -151,22 +151,22 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>argv</ItemText>
+          <ItemText>num_buf</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>new_path</ItemText>
+          <ItemText>color_code</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>strtok</ItemText>
+          <ItemText>byte_count</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>dir</ItemText>
+          <ItemText>SYS_GetStrWidth(strbuf)</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
@@ -177,6 +177,21 @@
           <count>5</count>
           <WinNumber>1</WinNumber>
           <ItemText>dir[1]</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>dir[1]</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>screen.buf</ItemText>
+        </Ww>
+        <Ww>
+          <count>8</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>\\Project\../System/system.c\SYS_Printf\lexical_1\lexical_2\num_buf[0]</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

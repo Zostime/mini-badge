@@ -14,10 +14,124 @@
 
 #include <stdbool.h>
 
+size_t screen_get_line_byte_offset(uint8_t line) {
+	size_t byte_offset = 0;
+	
+    for(uint8_t i=0; i<line; i++) {
+		char ch[SCREEN_CHAR_BYTES + 1];	// \0
+		size_t current_width = 0;
+		size_t last_offset = screen.offset;
+		
+		screen_seek(byte_offset, SEEK_SET, UNIT_BYTE);
+		while(screen_gets(ch, 1, UNIT_CHAR) != EOS && ch[0] != '\n') {	// line
+			size_t w = SYS_GetStrWidth(ch);
+			if(current_width + w > SYS_SCREEN_W) {
+				// 若超宽则恢复 offset 到该字符之前
+				screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
+				byte_offset = last_offset;
+				break;
+			}
+			current_width += w;
+			byte_offset+=strlen(ch);
+			last_offset = screen.offset;
+		}
+		if (ch[0] == '\n') {
+			byte_offset++;   // 跳过换行符
+		}
+	}
+	return byte_offset;
+}
+
+size_t count_screen_lines(void) {
+    size_t byte_offset = 0;   // 当前字节偏移
+    size_t line_count = 0;    // 总行数
+    char ch[SCREEN_CHAR_BYTES + 1]; 
+
+    while(1) {
+        size_t current_width = 0;     // 当前屏幕行已占宽度
+        int line_ended = 0;           // 本行是否已结束
+
+        screen_seek(byte_offset, SEEK_SET, UNIT_BYTE);
+        size_t last_offset = screen.offset;
+
+        // 读取字符直到行结束或文本结束
+        while(screen_gets(ch, 1, UNIT_CHAR) != EOS) {
+            if(ch[0] == '\n') {
+                byte_offset++;
+                line_ended = 1;
+                break;
+            }
+
+            size_t w = SYS_GetStrWidth(ch);
+            if(current_width + w > SYS_SCREEN_W) {
+                screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
+                byte_offset = last_offset;
+                line_ended = 1;
+                break;
+            }			
+            current_width += w;
+            byte_offset += strlen(ch);
+            last_offset = screen.offset; 
+        }
+
+        if(line_ended) {
+            line_count++;
+        } 
+		else {
+            if(current_width > 0) {
+                line_count++;
+            }
+            break;
+        }
+    }
+
+    return line_count;
+}
+
+FRESULT screen_scrollback(uint8_t direction) { 
+	FIL fil;     
+	FRESULT res;    
+	UINT bytes_written;	
+	size_t remaining;
+    long start_byte;
+	
+	static char line_buf[SCREEN_LINE_MAX_CHARS * SCREEN_CHAR_BYTES + 1];
+	switch(direction) {
+		case SCROLL_UP:
+			res = f_open(&fil, SH_SCROLL_HISTORY_PATH, FA_WRITE | FA_OPEN_APPEND | FA_OPEN_ALWAYS);
+			if(res != FR_OK) return res;
+		
+			start_byte = screen_get_line_byte_offset(1);	// SCROLL_UP 1 Line	
+			if(start_byte > screen.length) {
+				start_byte = screen.length;
+			}
+			
+			memcpy(line_buf, screen.buf, start_byte);
+			line_buf[start_byte] = '\0';
+			
+			remaining = screen.length - start_byte;
+			memmove(screen.buf, screen.buf + start_byte, remaining);    
+			screen.length = remaining;
+			screen_seek(remaining, SEEK_SET, UNIT_BYTE);
+
+			// 清空剩余部分
+			memset(screen.buf + screen.length, ' ', SCREEN_SIZE - screen.length);
+			
+			// 追加数据到文件末尾
+			res = f_write(&fil, line_buf, strlen(line_buf), &bytes_written);
+			break;
+			
+		case SCROLL_DOWN: {
+			break; 
+		}
+	} 
+	f_close(&fil);
+	return res;
+}
+
 uint8_t cdc_rx_buf[SH_CMD_SIZE];
 volatile uint8_t cdc_rx_ready = 0;
 uint16_t cdc_rx_len = 0;
-
 int CDC_ReadLine(char *buf, int size) {
     int idx = 0;
     while(1) {
@@ -42,8 +156,7 @@ int CDC_ReadLine(char *buf, int size) {
     }
 }
 
-static bool path_normalize(const char *src, char *dst)
-{
+static bool path_normalize(const char *src, char *dst) {
     if (strncmp(src, "0:", 2) != 0) return false;
 
     char stack[SH_MAX_PATH] = {0};
@@ -270,25 +383,37 @@ void Shell_Run(void) {
 	screen_puts("Copyright (C) Zostime. Released under MIT License.\n\n");
 	char cur_path[MAX_APP_PATH] = "0:/root";
 	size_t cur_offset = screen.offset;
+	bool refresh_screen = false;
 	while (1)
 	{   
+		refresh_screen = false;
 		screen_seek(cur_offset, SEEK_SET, UNIT_BYTE);
 		/* 显示路径与提示符 */ {	
 			const char *pwd = env_getenv("PWD");
 			char display_path[MAX_APP_PATH];
-			if (strncmp(pwd, "0:/root", 7) == 0) {
+			if(strncmp(pwd, "0:/root", 7) == 0) {
 				snprintf(display_path, sizeof(display_path), "~%s", pwd + 7);
 			} else {
 				// 去掉开头"0:", 只显示'/'和其余部分
-				if (strncmp(pwd, "0:", 2) == 0) {
+				if(strncmp(pwd, "0:", 2) == 0) {
 					snprintf(display_path, sizeof(display_path), "%s", pwd + 2);
 				} else {
 					snprintf(display_path, sizeof(display_path), "%s", pwd);
 				}
 			}
 			screen_printf("\033[37m%s\033[31m#\033[0m ", display_path);
-			SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
 		}
+		
+		uint8_t cur_lines = count_screen_lines();
+		if(cur_lines > SCREEN_MAX_LINES) {
+			refresh_screen = true;
+			for(uint8_t i=0; i < cur_lines-SCREEN_MAX_LINES; i++) {
+				screen_scrollback(SCROLL_UP);
+			}
+		}
+		
+		if(refresh_screen) LCD_Clear(BLACK);
+		SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
 		
 		/* INPUT */ {
 			char input[SH_CMD_SIZE];
@@ -408,7 +533,6 @@ void Shell_Run(void) {
 					for(size_t i=1; i < argc; i++) {
 						env_unset(argv[i]);
 					}
-					cur_offset = screen.offset;
 					continue;
 				}
 				// ...
@@ -424,8 +548,8 @@ void Shell_Run(void) {
 							// JMP exe
 							BOOTLOADER_REQUEST_APP(new_path);
 						} 
-						else {
-							if (f_opendir(&dir, new_path) == FR_OK) {
+						else{
+							if(f_opendir(&dir, new_path) == FR_OK) {
 								f_closedir(&dir);
 								screen_printf("%s: Is a directory\n", argv[0]);
 								cur_offset = screen.offset;
@@ -435,27 +559,27 @@ void Shell_Run(void) {
 					}
 					// 由PATH跳转到exe
 					const char *path_env = env_getenv("PATH");
-					if (path_env && *path_env) {
+					if(path_env && *path_env) {
 						char path_copy[SH_MAX_PATH];
 						strncpy(path_copy, path_env, sizeof(path_copy) - 1);
 						path_copy[sizeof(path_copy) - 1] = '\0';
 
 						char *dir = path_copy;   
-						while (dir && *dir) {
+						while(dir && *dir) {
 							// 查找下一个冒号
 							char *colon = strchr(dir, ':');
-							if (colon) {
+							if(colon) {
 								*colon = '\0';         
 							}
 
 							// 忽略空目录
-							if (*dir != '\0') {
+							if(*dir != '\0') {
 								char candidate[SH_MAX_PATH];
 								snprintf(candidate, sizeof(candidate), "%s/%s", dir, argv[0]);
 
-								if (path_expand(candidate, cur_path, new_path)) {
+								if(path_expand(candidate, cur_path, new_path)) {
 									FIL file;
-									if (f_open(&file, new_path, FA_READ) == FR_OK) {
+									if(f_open(&file, new_path, FA_READ) == FR_OK) {
 										f_close(&file);
 										BOOTLOADER_REQUEST_APP(new_path);
 										break;
@@ -463,7 +587,7 @@ void Shell_Run(void) {
 								}
 							}
 
-							if (!colon) break;        
+							if(!colon) break;        
 							dir = colon + 1;
 						}
 					}

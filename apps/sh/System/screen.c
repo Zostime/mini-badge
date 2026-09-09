@@ -132,17 +132,46 @@ void screen_printf(const char *format, ...) {
     screen_puts(tmp);
 }
 
-char *screen_gets(char *str, int n) {
+char *screen_gets(char *str, long n, int unit) {
     if (screen.offset >= screen.length || n <= 0) {
-        return NULL;
+        return EOS;
     }
-    int i = 0;
-    while (screen.offset < screen.length && i < n - 1) {
-        char c = screen.buf[screen.offset++];
-        str[i++] = c;
-        if (c == '\n') break;
+
+    size_t i = 0;      // 写入 str 的字节索引
+    long count = 0;    // 已读取的单位数（字节或字符）
+
+    if (unit == UNIT_BYTE) {
+        // 按字节读取, 最多 n 个字节
+        while (screen.offset < screen.length && count < n) {
+            char c = screen.buf[screen.offset++];
+            str[i++] = c;
+            count++;
+            if (c == '\n') break;
+        }
+    } else if (unit == UNIT_CHAR) {
+        // 按字符读取, 最多 n 个 UTF-8 字符
+        while (screen.offset < screen.length && count < n) {
+            unsigned char first = (unsigned char)screen.buf[screen.offset];
+            int len = utf8_seq_len(first);
+
+            if (screen.offset + len > screen.length) {
+                len = screen.length - screen.offset;
+                if (len == 0) break;
+            }
+			
+            for (int j = 0; j < len; j++) {
+                str[i++] = screen.buf[screen.offset++];
+            }
+            count++;
+
+            // 若字符为换行符则停止
+            if (first == '\n') break;
+        }
+    } else {
+        // 无效的 unit
+        return EOS;
     }
+
     str[i] = '\0';
     return str;
 }
-

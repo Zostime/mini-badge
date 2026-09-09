@@ -1,6 +1,8 @@
 #ifndef __GUI_H__
 #define __GUI_H__
 
+#include "ST7789V.h"
+
 /* 透明色设置 */
 #define TRANSPARENT_ENABLE 0 // 0:关闭透明色 1:开启透明色
 #define TRANSPARENT_COLOR 0xF81F
