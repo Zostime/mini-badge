@@ -645,6 +645,11 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\shared\bootloader_api.h</FilePath>
             </File>
+            <File>
+              <FileName>sys_path.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\shared\sys_path.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -36,6 +36,7 @@
 #include "Power.h"
 #include "rtc_utils.h"
 #include "bootloader_api.h"
+#include "sys_path.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

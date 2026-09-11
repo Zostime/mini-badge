@@ -6,6 +6,7 @@
 #include "usbd_cdc_if.h"
 
 #include "bootloader_api.h"
+#include "sys_path.h"
 
 #include "shell.h"
 #include "system.h"
@@ -233,8 +234,7 @@ bool path_expand(const char *input, const char *cur, char *out) {
  * @param  dst_size: 输出缓冲区大小
  * @retval 展开后字符串长度, -1 表示缓冲区不足
  */
-int shell_expand_vars(const char *src, char *dst, size_t dst_size)
-{
+int shell_expand_vars(const char *src, char *dst, size_t dst_size) {
     size_t si = 0;  // 源索引
     size_t di = 0;  // 目标索引
 
@@ -371,10 +371,50 @@ int shell_parse(char *cmd, char *argv[], int max_args) {
     return argc;
 }
 
+void Shell_Prepare(void) {
+	FRESULT fr;
+	FILINFO fno;
+	UINT br;
+	FIL fil;
+	
+	// 创建 0:/run/sh 文件夹
+	fr = f_mkdir("0:/run/sh");
+	if(fr != FR_OK && fr != FR_EXIST) return;
+	
+	fr = f_stat(SH_BOOT_DONE_PATH, &fno);
+	if((fr == FR_OK) && !(fno.fattrib & AM_DIR)) {// 不是 INIT
+		// 加载文件到 screen
+		fr = f_open(&fil, PATH_SCREEN, FA_READ);
+		if (fr == FR_OK) {
+			screen.length = f_size(&fil); 			
+			fr = f_read(&fil, screen.buf, f_size(&fil), &br);
+			f_close(&fil);
+		}
+	}
+}
 void Shell_Init(void) {
 	screen_init();
 	SYS_Init();
 	env_init();
+	Shell_Prepare();
+}
+
+void Shell_snapshot(void) {
+	FIL fil;
+	FRESULT res;
+	UINT bw;
+
+	// 将screen.buf写入screen
+	res = f_open(&fil, PATH_SCREEN, FA_WRITE | FA_CREATE_ALWAYS);
+	if(res != FR_OK) return;
+	res = f_write(&fil, screen.buf, screen.length, &bw);
+	if(res!=FR_OK || bw!=screen.length) return;
+	f_close(&fil);
+	
+	// 创建0:/run/sh/boot_done记录是否初始化
+	res = f_open(&fil, SH_BOOT_DONE_PATH, FA_WRITE | FA_CREATE_ALWAYS);
+	if(res != FR_OK) return;
+	f_close(&fil);
 }
 
 void Shell_Run(void) {
@@ -402,6 +442,7 @@ void Shell_Run(void) {
 				}
 			}
 			screen_printf("\033[37m%s\033[31m#\033[0m ", display_path);
+			SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
 		}
 		
 		uint8_t cur_lines = count_screen_lines();
@@ -545,6 +586,7 @@ void Shell_Run(void) {
 						FIL file;
 						if(f_open(&file, new_path, FA_READ) == FR_OK) {
 							f_close(&file);
+							Shell_snapshot();
 							// JMP exe
 							BOOTLOADER_REQUEST_APP(new_path);
 						} 
@@ -581,6 +623,7 @@ void Shell_Run(void) {
 									FIL file;
 									if(f_open(&file, new_path, FA_READ) == FR_OK) {
 										f_close(&file);
+										Shell_snapshot();	
 										BOOTLOADER_REQUEST_APP(new_path);
 										break;
 									}
