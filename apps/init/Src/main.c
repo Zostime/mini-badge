@@ -69,6 +69,51 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+FRESULT ClearDirectory(const char *path)
+{
+    DIR dir;
+    FILINFO fno;
+    FRESULT res;
+    char sub_path[256];
+
+    res = f_opendir(&dir, path);
+    if (res == FR_NO_PATH) {
+        res = f_mkdir(path);
+        if (res == FR_OK || res == FR_EXIST) {
+            return FR_OK; 
+        }
+        return res;
+    }
+    if (res != FR_OK) {
+        return res;
+    }
+
+    while (1) {
+        res = f_readdir(&dir, &fno);
+        if (res != FR_OK || fno.fname[0] == 0) {
+            break;  // 出错或到达末尾
+        }
+
+        // 跳过 "." 和 ".."
+        if (strcmp(fno.fname, ".") == 0 || strcmp(fno.fname, "..") == 0) {
+            continue;
+        }
+        snprintf(sub_path, sizeof(sub_path), "%s/%s", path, fno.fname);
+
+        if (fno.fattrib & AM_DIR) {
+            res = ClearDirectory(sub_path);
+            if (res == FR_OK) {
+                f_unlink(sub_path);
+            }
+        } else {
+            f_unlink(sub_path);
+        }
+    }
+
+    f_closedir(&dir);
+    return FR_OK;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -112,6 +157,19 @@ int main(void)
 	SD_Init();
 	LCD_Init();
 	SYS_Init();
+	
+	// make sure exist and clear 0:/tmp/ & 0:/run/
+	ClearDirectory("0:/tmp");
+	ClearDirectory("0:/run");
+	
+	// makefile 0:/run/screen for screen
+	FIL fil;
+	FRESULT fr;
+
+	fr = f_open(&fil, "0:/run/screen", FA_CREATE_ALWAYS | FA_WRITE);
+	if (fr == FR_OK) f_close(&fil);
+	
+	// JMP sh
 	BOOTLOADER_REQUEST_APP("0:/bin/sh");
   /* USER CODE END 2 */
 
