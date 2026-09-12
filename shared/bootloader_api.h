@@ -1,6 +1,7 @@
 #ifndef __BOOTLOADER_API_H
 #define __BOOTLOADER_API_H
 
+#include "stm32f1xx_hal.h"
 #include <stdint.h>
 #include <string.h>
 

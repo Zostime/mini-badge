@@ -3,10 +3,12 @@
 
 typedef int	err_t;
 
-#define EOK			0	/* No errors */
 #define ENOTSET    	1	/* Variable not set */
 #define ENOENT  	2	/* No such file or directory */
-#define EINVAL     	4   /* Invalid parameter */
-#define ENOSPC   	8   /* No space left on device */
+#define EIO			5	/* Input/output error */
+#define ENOEXEC 	8 	/* Exec format error */
+#define EBADF		9	/* Bad file descriptor */
+#define EINVAL     	22  /* Invalid argument */
+#define ENOSPC   	28  /* No space left on device */
 
 #endif
