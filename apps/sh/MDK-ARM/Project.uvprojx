@@ -650,6 +650,11 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\shared\sys_path.h</FilePath>
             </File>
+            <File>
+              <FileName>errno.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\shared\errno.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

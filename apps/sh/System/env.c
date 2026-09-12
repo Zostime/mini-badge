@@ -88,7 +88,7 @@ const char *env_getenv(const char *name)
     return NULL;
 }
 
-int env_set(const char *name, const char *value)
+err_t env_set(const char *name, const char *value)
 {
     // 如果变量已存在, 更新其值
     for (int i = 0; i < env_count; i++) {
@@ -101,7 +101,7 @@ int env_set(const char *name, const char *value)
 
     // 变量不存在,添加新项
     if (env_count >= ENV_MAX) {
-        return -1;   // 表满
+        return ENOSPC;   // 表满
     }
 
     strncpy(env_table[env_count].name, name, ENV_NAME_MAX - 1);
@@ -117,9 +117,9 @@ int env_set(const char *name, const char *value)
 /**
  * @brief  删除环境变量
  * @param  name: 变量名
- * @retval 0 = 成功, -1 = 变量不存在
+ * @retval 0 = 成功, ENOTSET = 变量不存在
  */
-int env_unset(const char *name)
+err_t env_unset(const char *name)
 {
     for(int i=0; i < env_count; i++) {
         if(strcmp(env_table[i].name, name) == 0) {
@@ -133,5 +133,5 @@ int env_unset(const char *name)
             return 0;
         }
     }
-    return -1;
+    return ENOTSET;
 }

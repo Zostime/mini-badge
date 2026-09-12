@@ -157,8 +157,8 @@ int CDC_ReadLine(char *buf, int size) {
     }
 }
 
-static bool path_normalize(const char *src, char *dst) {
-    if (strncmp(src, "0:", 2) != 0) return false;
+static err_t path_normalize(const char *src, char *dst) {
+    if (strncmp(src, "0:", 2) != 0) return EINVAL;
 
     char stack[SH_MAX_PATH] = {0};
     char temp[SH_MAX_PATH];
@@ -185,7 +185,7 @@ static bool path_normalize(const char *src, char *dst) {
     } else {
         snprintf(dst, SH_MAX_PATH, "0:/%s", stack);
     }
-    return true;
+    return 0;
 }
 
 /**
@@ -193,9 +193,9 @@ static bool path_normalize(const char *src, char *dst) {
  * @param  input: 路径字符串
  * @param  cur: 当前工作目录
  * @param  out: 输出规范路径，容量至少 MAX_PATH
- * @retval 是否成功
+ * @retval err_t
  */
-bool path_expand(const char *input, const char *cur, char *out) {
+err_t path_expand(const char *input, const char *cur, char *out) {
     char temp[SH_MAX_PATH];
 
     if (input[0] == '\0') {
@@ -204,26 +204,31 @@ bool path_expand(const char *input, const char *cur, char *out) {
     }
 
     // 处理home简写 "~"
-    if (input[0] == '~') {
+    if(input[0] == '~') {
         snprintf(temp, sizeof(temp), "%s%s", env_getenv("HOME"), input + 1);
     }
+	// 处理OLDPWD "-"
+    else if(!strcmp(input, "-")) {
+		const char *oldpwd = env_getenv("OLDPWD");
+		if(!oldpwd) return ENOTSET;
+		snprintf(temp, sizeof(temp), "%s", oldpwd);
+	}
     // 处理完整路径
-    else if (input[0] == '0' && input[1] == ':') {
+    else if(input[0] == '0' && input[1] == ':') {
         snprintf(temp, sizeof(temp), "%s", input); 
     }
     // 处理绝对路径
-    else if (input[0] == '/') {
+    else if(input[0] == '/') {
         snprintf(temp, sizeof(temp), "0:%s", input);
     }
     // 相对路径
     else {
-        if (strcmp(cur, "0:/") == 0) {
+        if(strcmp(cur, "0:/") == 0) {
             snprintf(temp, sizeof(temp), "0:/%s", input);
         } else {
             snprintf(temp, sizeof(temp), "%s/%s", cur, input);
         }
     }
-
     return path_normalize(temp, out);
 }
 
@@ -487,7 +492,12 @@ void Shell_Run(void) {
 					
 					// 路径展开
 					char new_path[SH_MAX_PATH];
-					path_expand(dir_path, cur_path, new_path);
+					err_t err = path_expand(dir_path, cur_path, new_path);
+					if(err == ENOTSET) {
+						screen_puts("cd: OLDPWD not set\n"); 
+						cur_offset = screen.offset;
+						continue;
+					}
 
 					// 解析 (IDK为什么f_stat解析根目录是 FR_INVALID_NAME QAQ)
 					DIR dir;
