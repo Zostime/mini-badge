@@ -3516,11 +3516,11 @@
       <ActiveTab>0</ActiveTab>
       <Doc>
         <Name>..\System\shell.c</Name>
-        <ColumnNumber>21</ColumnNumber>
-        <TopLine>123</TopLine>
-        <CurrentLine>613</CurrentLine>
+        <ColumnNumber>0</ColumnNumber>
+        <TopLine>15</TopLine>
+        <CurrentLine>443</CurrentLine>
         <Folding>1</Folding>
-        <ContractedFolders>17,28,56,102,146,170,201,208,245,252,315,322,389,417,424,533,598</ContractedFolders>
+        <ContractedFolders>17,28,56,102,146,170,201,208,245,252,315,322,389,417,424,493,533,592,598,606</ContractedFolders>
         <PaneID>0</PaneID>
       </Doc>
     </MDIGroup>
