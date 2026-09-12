@@ -655,6 +655,16 @@
               <FileType>5</FileType>
               <FilePath>..\..\..\shared\errno.h</FilePath>
             </File>
+            <File>
+              <FileName>kernel.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\shared\kernel.h</FilePath>
+            </File>
+            <File>
+              <FileName>kernel.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\shared\kernel.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

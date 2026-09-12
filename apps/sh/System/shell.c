@@ -5,7 +5,7 @@
 #include "rtc_utils.h"
 #include "usbd_cdc_if.h"
 
-#include "bootloader_api.h"
+#include "kernel.h"
 #include "sys_path.h"
 
 #include "shell.h"
@@ -15,6 +15,17 @@
 
 #include <stdbool.h>
 
+int env_build_environ(char *buf[], int max_env) {
+    int count = 0;
+    for (int i = 0; i < env_count && count < max_env - 1; i++) {
+        char *p = buf[count];
+        snprintf(p, ENV_NAME_MAX + ENV_VALUE_MAX + 2,
+                 "%s=%s", env_table[i].name, env_table[i].value);
+        count++;
+    }
+    buf[count] = NULL;
+    return count;
+}
 size_t screen_get_line_byte_offset(uint8_t line) {
 	size_t byte_offset = 0;
 	
@@ -430,7 +441,7 @@ void Shell_snapshot(void) {
 }
 
 void Shell_Run(void) {
-	char cur_path[MAX_APP_PATH] = "0:/root";
+	char cur_path[SH_MAX_PATH] = "0:/root";
 	size_t cur_offset = screen.offset;
 	while (1)
 	{   
@@ -438,7 +449,7 @@ void Shell_Run(void) {
 		screen_seek(cur_offset, SEEK_SET, UNIT_BYTE);
 		/* 显示路径与提示符 */ {	
 			const char *pwd = env_getenv("PWD");
-			char display_path[MAX_APP_PATH];
+			char display_path[SH_MAX_PATH];
 			if(strncmp(pwd, "0:/root", 7) == 0) {
 				snprintf(display_path, sizeof(display_path), "~%s", pwd + 7);
 			} else {
@@ -594,6 +605,15 @@ void Shell_Run(void) {
 				// ...
 				else	// 外部命令 
 				{ 
+					err_t err;
+					static char env_buf[ENV_MAX][ENV_NAME_MAX + ENV_VALUE_MAX + 2];
+					char *envp[ENV_MAX + 1];
+					for (int i = 0; i < ENV_MAX; i++) {
+						envp[i] = env_buf[i];
+					}
+					env_build_environ(envp, ENV_MAX);
+					const char *path_env = NULL;
+					
 					// 由路径跳转到exe
 					char new_path[SH_MAX_PATH];
 					if(path_expand(argv[0], cur_path, new_path)) {
@@ -603,7 +623,8 @@ void Shell_Run(void) {
 							f_close(&file);
 							Shell_snapshot();
 							// JMP exe
-							BOOTLOADER_REQUEST_APP(new_path);
+							err = execve(new_path, argv, envp);
+							goto err_execve;
 						} 
 						else{
 							if(f_opendir(&dir, new_path) == FR_OK) {
@@ -615,7 +636,7 @@ void Shell_Run(void) {
 						}						
 					}
 					// 由PATH跳转到exe
-					const char *path_env = env_getenv("PATH");
+					path_env = env_getenv("PATH");
 					if(path_env && *path_env) {
 						char path_copy[SH_MAX_PATH];
 						strncpy(path_copy, path_env, sizeof(path_copy) - 1);
@@ -634,13 +655,13 @@ void Shell_Run(void) {
 								char candidate[SH_MAX_PATH];
 								snprintf(candidate, sizeof(candidate), "%s/%s", dir, argv[0]);
 
-								if(path_expand(candidate, cur_path, new_path)) {
+								if(!path_expand(candidate, cur_path, new_path)) {
 									FIL file;
 									if(f_open(&file, new_path, FA_READ) == FR_OK) {
 										f_close(&file);
 										Shell_snapshot();	
-										BOOTLOADER_REQUEST_APP(new_path);
-										break;
+										err = execve(new_path, argv, envp);
+										goto err_execve;
 									}
 								}
 							}
@@ -652,6 +673,9 @@ void Shell_Run(void) {
 					screen_printf("%s: command not found\n", argv[0]);
 					cur_offset = screen.offset;
 					continue;
+					
+					err_execve:
+						// error handler
 				}
 			}		
 		}

@@ -12,6 +12,9 @@ typedef struct {
     char value[ENV_VALUE_MAX];
 } env_var_t;
 
+extern env_var_t env_table[ENV_MAX];
+extern int       env_count;          
+
 void env_init(void);
 const char *env_getenv(const char *name);
 err_t env_set(const char *name, const char *value);

@@ -3,8 +3,8 @@
 #include <string.h>
 #include "sys_path.h"
 
-static env_var_t env_table[ENV_MAX];
-static int env_count = 0;
+env_var_t env_table[ENV_MAX];
+int env_count = 0;
 
 /**
  * @brief  从指定文件加载环境变量(格式：KEY="value",支持 #注释)
