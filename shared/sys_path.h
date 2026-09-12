@@ -5,6 +5,6 @@
 #define	PATH_SCREEN	"0:/run/screen"
 
 // System path
-
+#define PATH_HOME	"0:/root"
 
 #endif

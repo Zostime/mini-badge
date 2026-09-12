@@ -382,14 +382,21 @@ void Shell_Prepare(void) {
 	if(fr != FR_OK && fr != FR_EXIST) return;
 	
 	fr = f_stat(SH_BOOT_DONE_PATH, &fno);
-	if((fr == FR_OK) && !(fno.fattrib & AM_DIR)) {// 不是 INIT
+	if((fr == FR_OK) && !(fno.fattrib & AM_DIR)) {// 已 INIT
 		// 加载文件到 screen
 		fr = f_open(&fil, PATH_SCREEN, FA_READ);
-		if (fr == FR_OK) {
-			screen.length = f_size(&fil); 			
-			fr = f_read(&fil, screen.buf, f_size(&fil), &br);
+		if (fr == FR_OK) {    
+			size_t file_size = f_size(&fil); 	
+		
+			screen_seek(file_size, SEEK_SET, UNIT_BYTE);
+			fr = f_read(&fil, screen.buf, file_size, &br);
 			f_close(&fil);
 		}
+	}
+	else {	// INIT
+		screen_seek(0, SEEK_SET, UNIT_CHAR);
+		screen_puts("Mini-Badge Shell\n");
+		screen_puts("Copyright (C) Zostime. Released under MIT License.\n\n");
 	}
 }
 void Shell_Init(void) {
@@ -418,15 +425,11 @@ void Shell_snapshot(void) {
 }
 
 void Shell_Run(void) {
-    screen_seek(0, SEEK_SET, UNIT_CHAR);
-	screen_puts("Mini-Badge Shell\n");
-	screen_puts("Copyright (C) Zostime. Released under MIT License.\n\n");
 	char cur_path[MAX_APP_PATH] = "0:/root";
 	size_t cur_offset = screen.offset;
-	bool refresh_screen = false;
 	while (1)
 	{   
-		refresh_screen = false;
+		bool refresh_screen = false;
 		screen_seek(cur_offset, SEEK_SET, UNIT_BYTE);
 		/* 显示路径与提示符 */ {	
 			const char *pwd = env_getenv("PWD");
@@ -490,6 +493,8 @@ void Shell_Run(void) {
 					DIR dir;
 					if (f_opendir(&dir, new_path) == FR_OK) {
 						f_closedir(&dir);
+						env_set("OLDPWD", cur_path);
+						
 						strcpy(cur_path, new_path);
 						env_set("PWD", new_path); 
 					} 

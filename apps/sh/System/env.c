@@ -1,6 +1,7 @@
 #include "ff.h"
 #include "env.h"
 #include <string.h>
+#include "sys_path.h"
 
 static env_var_t env_table[ENV_MAX];
 static int env_count = 0;
@@ -71,9 +72,9 @@ void env_init(void)
     env_count = 0;
 
 	env_set("USER", "root");
-    env_set("HOME", "0:/root");
+    env_set("HOME", PATH_HOME);
     env_set("TERM", "Mini-Badge");
-	env_set("PWD", "0:/root");
+	env_set("PWD", 	PATH_HOME);
 	env_load("0:/etc/environment");	// PATH
 }
 
