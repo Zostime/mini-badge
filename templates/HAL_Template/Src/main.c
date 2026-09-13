@@ -30,12 +30,11 @@
 #include "ST7789V.h"
 #include "GUI.h"
 #include "Key.h"
-#include "spi_sdcard.h"
 #include "ff.h"
 #include "Buzzer.h"
 #include "Power.h"
 #include "rtc_utils.h"
-#include "bootloader_api.h"
+#include "kernel.h"
 #include "sys_path.h"
 /* USER CODE END Includes */
 
@@ -109,13 +108,17 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  SD_Init();
   Key_Init();
   Buzzer_Init(); 
   Power_Init();
   LCD_Init();
   /* USER CODE END 2 */
-
+  static char *argv[EXEC_MAX_ARGS + 1];
+  static char *envp[EXEC_MAX_ENVS + 1];
+  int argc;
+  execve_load(&argc, argv, envp);
+  /* APP CODE BEGIN */
+	
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -124,6 +127,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
   }
+  /* APP CODE END */
   /* USER CODE END 3 */
 }
 
