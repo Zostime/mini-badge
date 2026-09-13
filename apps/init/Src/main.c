@@ -36,7 +36,7 @@
 #include "Power.h"
 #include "rtc_utils.h"
 #include "system.h"
-#include "bootloader_api.h"
+#include "kernel.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -162,7 +162,7 @@ int main(void)
 	ClearDirectory("0:/tmp");
 	ClearDirectory("0:/run");
 	
-	// makefile 0:/run/screen for screen
+	// make file 0:/run/screen for screen
 	FIL fil;
 	FRESULT fr;
 
@@ -170,7 +170,8 @@ int main(void)
 	if (fr == FR_OK) f_close(&fil);
 	
 	// JMP sh
-	BOOTLOADER_REQUEST_APP("0:/bin/sh");
+	char *argv[] = {"sh",NULL}; 
+	execve("0:/bin/sh", argv, NULL);
   /* USER CODE END 2 */
 
   /* Infinite loop */
