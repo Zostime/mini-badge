@@ -30,12 +30,11 @@
 #include "ST7789V.h"
 #include "GUI.h"
 #include "Key.h"
-#include "spi_sdcard.h"
 #include "ff.h"
 #include "Buzzer.h"
 #include "Power.h"
 #include "rtc_utils.h"
-#include "bootloader_api.h"
+#include "kernel.h"  
 #include "sys_path.h"
 /* USER CODE END Includes */
 
@@ -109,11 +108,97 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  SD_Init();
-  Key_Init();
-  Buzzer_Init(); 
-  Power_Init();
-  LCD_Init();
+  static char *argv[EXEC_MAX_ARGS + 1];
+  static char *envp[EXEC_MAX_ENVS + 1];
+  int argc;
+  execve_load(&argc, argv, envp);	
+  /* APP CODE BEGIN */
+	FIL fil;  
+	FILINFO fno;
+    DIR dir;
+    FRESULT res;
+	
+	UINT bw;
+	FIL screen_fil;
+	char *path = argv[1]; 
+
+    res = f_open(&screen_fil, PATH_SCREEN, FA_WRITE | FA_OPEN_APPEND);
+	if(res == FR_OK) {
+		//	获取'M'宽度
+		uint32_t cp = (uint32_t)'M';
+		uint16_t width = 0;
+		if (f_open(&fil, PATH_DEFAULT_FONT, FA_READ) == FR_OK) {
+			if (f_lseek(&fil, (DWORD)cp * 9) == FR_OK) {
+				uint8_t width_byte = 0;
+				UINT br;
+				if (f_read(&fil, &width_byte, 1, &br) == FR_OK && br == 1) {
+					width = width_byte;
+				}
+			}
+			f_close(&fil);
+		}
+		
+		if(!width) width=1;  
+		uint8_t char_col = screen_info.xres / width; 
+
+		// ls
+		uint16_t max_fname_len = 0;	
+		uint16_t max_fname_col = 0;
+		uint16_t max_fname_row = 0;
+		uint16_t nf_total = 0;
+		char *fn;
+
+		res = f_opendir(&dir, path);
+		if(res == FR_OK) {
+			for(uint8_t i = 0; i <= 1; i++) {
+				if(i) {
+					f_closedir(&dir);
+					res = f_opendir(&dir, path);
+					if(res != FR_OK) break;
+
+					max_fname_col = char_col / (max_fname_len + 2);
+					if(max_fname_col == 0) max_fname_col=1;
+					
+					max_fname_row = (nf_total+max_fname_col-1) / max_fname_col;
+				
+				}
+
+				while(1) {
+					res = f_readdir(&dir, &fno);
+					if(res != FR_OK || fno.fname[0] == 0) break;
+
+					#if _USE_LFN
+						fn = (*fno.lfname) ? fno.lfname : fno.fname;
+					#else
+						fn = fno.fname;
+					#endif
+
+					if(!i) {
+						uint16_t len = strlen(fn);
+						if(len > max_fname_len) max_fname_len = len;
+						nf_total++;                
+					} else if(fno.fattrib & AM_DIR) {
+						f_write(&screen_fil, fn, strlen(fn), &bw);
+						f_write(&screen_fil, " ", 1, &bw);
+					} else {
+						f_write(&screen_fil, fn, strlen(fn), &bw);
+						f_write(&screen_fil, " ", 1, &bw);
+					}
+				}
+			}
+		} else {
+			// Open DIR Fail
+		}
+		f_closedir(&dir);
+	}
+	f_write(&screen_fil, "\n", 1, &bw);
+	f_close(&screen_fil);
+	
+	/* APP CODE END */
+	// JMP sh
+	argv[0] = "sh";
+	argv[1] = NULL;
+	execve("0:/bin/sh", argv, NULL);
   /* USER CODE END 2 */
 
   /* Infinite loop */
