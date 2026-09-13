@@ -1,29 +1,13 @@
 #include "system.h"
 #include "ff.h"
-#include "ST7789V.h"
 #include "GUI.h"
-#include "bootloader_api.h"
 #include <stdarg.h>
-#include <stdio.h>    
+#include <string.h>   
 #include <stdlib.h>
-#include "screen.h"
-
-FATFS sSDCARD_FatFs;
-void SYS_Init(void) {
-    FRESULT SD_res;
-    SD_res = f_mount(&sSDCARD_FatFs, "0:", 0);
-    if (SD_res != FR_OK) {
-        BYTE work[512];
-        SD_res = f_mkfs("0:", 0, work, sizeof(work));
-        if (SD_res == FR_OK) {
-            SD_res = f_mount(&sSDCARD_FatFs, "0:", 1);
-        }
-    }    
-
-    LCD_Clear(BLACK);
-    LCD_SetBrightness(1000);
-}
-
+#include <stdio.h>
+#include "kernel.h"
+#include "sys_path.h"
+             
 static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp) {
     if (p >= end) return 0;
     uint8_t c = *p;
@@ -59,7 +43,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     va_end(args);
           
     FIL file_uni;
-    if (f_open(&file_uni, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK)
+    if (f_open(&file_uni, PATH_DEFAULT_FONT, FA_READ) != FR_OK)
         return;
 	
 	uint16_t cur_fg = color;            // 默认前景色
@@ -190,11 +174,11 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
         }
 
         // 自动换行判断
-        if (cur_x + char_width > SYS_SCREEN_W) {
+        if (cur_x + char_width > screen_info.xres) {
             cur_x = x;
             cur_y += 8;
         }
-        if (cur_y + 8 > SYS_SCREEN_H) break;
+        if (cur_y + 8 > screen_info.yres) break;
 
         // 逐行批量发送像素 (纵向取模高位在下)
         for (uint8_t row = 0; row < 8; row++) {
@@ -226,7 +210,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
 uint16_t SYS_GetStrWidth(const char *str) {
     FIL font_file;
-    if (f_open(&font_file, "0:/sys/fonts/UNICODE_DEFAULT_8x8", FA_READ) != FR_OK) {
+    if (f_open(&font_file, PATH_DEFAULT_FONT, FA_READ) != FR_OK) {
         return 0;
     }
 

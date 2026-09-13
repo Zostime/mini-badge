@@ -32,6 +32,7 @@
 #include "spi_sdcard.h"
 #include "Buzzer.h"
 #include "Power.h"
+#include "kernel.h"
 
 #include "shell.h"
 /* USER CODE END Includes */
@@ -106,11 +107,18 @@ int main(void)
   MX_TIM3_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  SD_Init();
+  static char *argv[EXEC_MAX_ARGS + 1];
+  static char *envp[EXEC_MAX_ENVS + 1];
+  int argc;
+  execve_load(&argc, argv, envp);
+
   Key_Init();
   Buzzer_Init(); 
   Power_Init();
   LCD_Init();
+  
+  LCD_Clear(0x0000);
+  LCD_SetBrightness(1000);
 
   Shell_Init();
   Shell_Run();

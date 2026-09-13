@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <GUI.h>
 
-#define SYS_SCREEN_W	240	// px
-#define SYS_SCREEN_H	135 // px
 #define SYS_PRINT_BUFFER_SIZE (30*16)*3 + 1 // (30*16)*3 为全屏汉字所需字节数量, +1为 '\0'
 
 void SYS_Init(void);

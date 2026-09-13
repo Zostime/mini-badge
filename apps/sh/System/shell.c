@@ -37,7 +37,7 @@ size_t screen_get_line_byte_offset(uint8_t line) {
 		screen_seek(byte_offset, SEEK_SET, UNIT_BYTE);
 		while(screen_gets(ch, 1, UNIT_CHAR) != EOS && ch[0] != '\n') {	// line
 			size_t w = SYS_GetStrWidth(ch);
-			if(current_width + w > SYS_SCREEN_W) {
+			if(current_width + w > screen_info.xres) {
 				// 若超宽则恢复 offset 到该字符之前
 				screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
 				byte_offset = last_offset;
@@ -75,7 +75,7 @@ size_t count_screen_lines(void) {
             }
 
             size_t w = SYS_GetStrWidth(ch);
-            if(current_width + w > SYS_SCREEN_W) {
+            if(current_width + w > screen_info.xres) {
                 screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
                 byte_offset = last_offset;
                 line_ended = 1;
@@ -417,7 +417,6 @@ void Shell_Prepare(void) {
 }
 void Shell_Init(void) {
 	screen_init();
-	SYS_Init();
 	env_init();
 	Shell_Prepare();
 }
@@ -674,8 +673,10 @@ void Shell_Run(void) {
 					cur_offset = screen.offset;
 					continue;
 					
-					err_execve:
-						// error handler
+					err_execve:	// error handler
+						LCD_Clear(BLACK);
+						SYS_Printf(0,0,WHITE,BLACK,"Execve() error\nCode: %d", err);
+						while(1);
 				}
 			}		
 		}
