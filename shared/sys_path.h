@@ -8,6 +8,7 @@
 #define PATH_HOME			"0:/root"
 #define PATH_RUN_ENV		"0:/run/env"
 #define PATH_RUN_ARGS		"0:/run/args"
-#define PATH_DEFAULT_FONT	"0:/sys/fonts/UNICODE-SpleenMono-Regular-6x8"
+#define PATH_VCONSOLE_CONF	"0:/etc/vconsole.conf"
+#define PATH_FONTS			"0:/sys/fonts"
 
 #endif

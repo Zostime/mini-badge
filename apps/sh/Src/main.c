@@ -35,6 +35,7 @@
 #include "kernel.h"
 
 #include "shell.h"
+#include "system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -119,7 +120,8 @@ int main(void)
   
   LCD_Clear(0x0000);
   LCD_SetBrightness(1000);
-
+  
+  SYS_Init();
   Shell_Init();
   Shell_Run();
   /* USER CODE END 2 */

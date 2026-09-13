@@ -7,6 +7,40 @@
 #include <stdio.h>
 #include "kernel.h"
 #include "sys_path.h"
+
+char font_path[64] = "0:/sys/fonts/UNICODE-SYS-Regular-8x8"; 
+
+void SYS_Init(void)
+{
+    FIL file;
+    char line[128];
+
+    if (f_open(&file, PATH_VCONSOLE_CONF, FA_READ) != FR_OK) {
+        return; 
+    }
+
+    while (f_gets(line, sizeof(line), &file)) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r'))
+            line[--len] = '\0';
+
+        /* 跳过注释和空行 */
+        if (line[0] == '#' || line[0] == '\0') continue;
+
+        /* 分割 KEY=VALUE */
+        char *eq = strchr(line, '=');
+        if (!eq) continue;
+        *eq = '\0';
+        char *key   = line;
+        char *value = eq + 1;
+
+        if (strcmp(key, "FONT") == 0) {
+            snprintf(font_path, sizeof(font_path),
+                     "%s/%s", PATH_FONTS, value);
+        }
+    }
+    f_close(&file);
+}
              
 static int utf8_decode(const uint8_t *p, const uint8_t *end, uint32_t *cp) {
     if (p >= end) return 0;
@@ -43,7 +77,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
     va_end(args);
           
     FIL file_uni;
-    if (f_open(&file_uni, PATH_DEFAULT_FONT, FA_READ) != FR_OK)
+    if (f_open(&file_uni, font_path, FA_READ) != FR_OK)
         return;
 	
 	uint16_t cur_fg = color;            // 默认前景色
@@ -210,7 +244,7 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
 uint16_t SYS_GetStrWidth(const char *str) {
     FIL font_file;
-    if (f_open(&font_file, PATH_DEFAULT_FONT, FA_READ) != FR_OK) {
+    if (f_open(&font_file, font_path, FA_READ) != FR_OK) {
         return 0;
     }
 
