@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 DEFAULT_TARGET_SUBDIRS = ["APPs/", "../../sdcard/bin/", "E:/bin/"]
-
+IGNORE_TOP_FOLDERS = [".template"]
 
 def resolve_target_dirs(script_dir: Path) -> list[Path]:
     args = sys.argv[1:]
@@ -48,6 +48,8 @@ def main():
         return
 
     total_copied = 0
+    ignored_count = 0
+
     for src in project_files:
         try:
             rel = src.relative_to(apps_dir)
@@ -59,6 +61,12 @@ def main():
 
         top_folder = rel.parts[0]
 
+        # 忽略指定顶层文件夹名称，精确匹配，不是后缀
+        if top_folder in IGNORE_TOP_FOLDERS:
+            print(f"忽略: {src} (顶层文件夹: {top_folder})")
+            ignored_count += 1
+            continue
+
         for target_dir in usable_targets:
             dest_file = target_dir / top_folder
             try:
@@ -69,7 +77,9 @@ def main():
                 print(f"复制失败: {src} -> {dest_file} - {e}")
 
     print(f"完成, 共复制 {total_copied} 个 Project 文件")
-    print(f"共处理 {len(project_files)} 个源文件 × {len(usable_targets)} 个目标目录")
+    print(f"搜索到 {len(project_files)} 个源文件，忽略 {ignored_count} 个，参与复制 {len(project_files) - ignored_count} 个")
+    print(f"共使用 {len(usable_targets)} 个目标目录")
+    print(f"忽略的顶层文件夹: {', '.join(IGNORE_TOP_FOLDERS)}")
 
 
 if __name__ == "__main__":

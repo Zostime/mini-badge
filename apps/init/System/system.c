@@ -4,32 +4,6 @@
 #include "GUI.h"
 #include <stdlib.h>
 
-FATFS sSDCARD_FatFs;
-void SYS_Init(void)
-{
-    FRESULT SD_res;
-    SD_res = f_mount(&sSDCARD_FatFs, "0:", 0);
-    if (SD_res != FR_OK) {
-		BYTE work[512];
-        SD_res = f_mkfs("0:", 0, work, sizeof(work));
-        if (SD_res == FR_OK) {
-            SD_res = f_mount(&sSDCARD_FatFs, "0:", 1);
-        }
-    }	
-	
-	#if SYS_USE_BOOTLOGO
-	SYS_DisplayBMP(0, 0, SYS_BOOTLOGO_PATH);
-	for(uint16_t i=0;i<1000;i++)
-	{
-		LCD_SetBrightness(i);
-		HAL_Delay(2);
-	}
-	#else
-	LCD_Clear(BLACK);
-	LCD_SetBrightness(1000);
-	#endif
-}
-
 #pragma pack(push, 1)
 typedef struct BITMAPFILEHEADER {
     uint16_t bfType;// 文件的类型，该值必需是0x4D42，也就是字符'BM'。
