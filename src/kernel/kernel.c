@@ -13,7 +13,7 @@ screeninfo_t screen_info = {
 
 FATFS sSDCARD_FatFs;
 
-err_t execve(const char *pathname, char *const argv[], char *const envp[])
+int execve(const char *pathname, char *const argv[], char *const envp[])
 {
     if (pathname == NULL || pathname[0] == '\0') return EINVAL;
     if (argv == NULL) return EINVAL;
@@ -82,7 +82,7 @@ err_t execve(const char *pathname, char *const argv[], char *const envp[])
 	f_unlink(PATH_RUN_ENV);
     return ENOEXEC;
 }
-err_t execve_load(int *argc, char *argv[], char *envp[])
+int execve_load(int *argc, char *argv[], char *envp[])
 {
 	SD_Init();
 	

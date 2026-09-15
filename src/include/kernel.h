@@ -10,10 +10,6 @@
 #define EXEC_ARG_MAX    128
 #define EXEC_ENV_MAX    128
 
-#define STDIN_FILENO 	0
-#define STDOUT_FILENO	1
-#define STDERR_FILENO 	2
-
 typedef signed int ssize_t;
 
 typedef struct {
@@ -23,12 +19,7 @@ typedef struct {
 
 extern screeninfo_t screen_info;
 
-err_t execve(const char *pathname, char *const argv[], char *const envp[]);
-err_t execve_load(int *argc, char *argv[], char *envp[]);
-
-int open(const char *pathname, int flags, ...);
-ssize_t read(int fd, void *buf, size_t count);
-ssize_t write(int fd, const void *buf, size_t count);
-int close(int fd);
+int execve(const char *pathname, char *const argv[], char *const envp[]);
+int execve_load(int *argc, char *argv[], char *envp[]);
 
 #endif
