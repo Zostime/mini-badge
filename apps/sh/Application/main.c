@@ -37,6 +37,7 @@
 #include "kernel.h"
 #include "sys_path.h"
 #include "shell.h"
+#include "system.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
