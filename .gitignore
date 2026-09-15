@@ -35,3 +35,4 @@ DebugConfig/
 .vscode/
 .gitignore
 tools/builder/APPs/
+tools/syncKeil/backups/

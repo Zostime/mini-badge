@@ -1,6 +1,6 @@
 Dependencies for Project 'Project', Target 'Project': (DO NOT MODIFY !)
 F (startup_stm32f103xb.s)(0x6A74F1F0)(--cpu Cortex-M3 -g --apcs=interwork -I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include--pd "__UVISION_VERSION SETA 524" --pd "_RTE_ SETA 1" --pd "STM32F10X_MD SETA 1"--list .\startup_stm32f103xb.lst --xref -o .\project\startup_stm32f103xb.o --depend .\project\startup_stm32f103xb.d)
-F (.\Application\main.c)(0x6AA841E6)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\main.o --omf_browse .\project\main.crf --depend .\project\main.d)
+F (.\Application\main.c)(0x6AA86FEF)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\main.o --omf_browse .\project\main.crf --depend .\project\main.d)
 I (Application\main.h)(0x6AA700C8)
 I (../../src/drivers/platform/stm32f1/hal/Inc/stm32f1xx_hal.h)(0x6A60F22F)
 I (../../src/drivers/platform/stm32f1/stm32f1xx_hal_conf.h)(0x6AA700C7)
@@ -55,10 +55,11 @@ I (./Application/ffconf.h)(0x6A679A5A)
 I (../../src/drivers/input/misc/Buzzer.h)(0x6A689CDE)
 I (../../src/drivers/power/Power.h)(0x6A68BCC4)
 I (../../src/drivers/rtc/rtc_utils.h)(0x6A68C506)
-I (../../src/include/kernel.h)(0x6AA65458)
+I (../../src/include/kernel.h)(0x6AA87547)
 I (../../src/include/errno.h)(0x6AA4FBE7)
 I (../../src/include/sys_path.h)(0x6AA6AC68)
 I (./System/shell.h)(0x6AA4E4B2)
+I (./System/system.h)(0x6AA6541F)
 F (.\Application\usb_device.c)(0x6A626DCE)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\usb_device.o --omf_browse .\project\usb_device.crf --depend .\project\usb_device.d)
 I (Application\usb_device.h)(0x6AA700C7)
 I (../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x6A60F22F)
@@ -1788,12 +1789,13 @@ I (./Application/ffconf.h)(0x6A679A5A)
 I (D:\keil5\ARM\ARMCC\include\stdint.h)(0x6A626CF3)
 F (..\..\src\include\bootloader_api.h)(0x6AA4F880)()
 F (..\..\src\include\errno.h)(0x6AA4FBE7)()
-F (..\..\src\include\kernel.h)(0x6AA65458)()
+F (..\..\src\include\kernel.h)(0x6AA87547)()
 F (..\..\src\include\sys_path.h)(0x6AA6AC68)()
-F (..\..\src\kernel\kernel.c)(0x6AA653F4)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\kernel.o --omf_browse .\project\kernel.crf --depend .\project\kernel.d)
-I (../../src/include/kernel.h)(0x6AA65458)
+F (..\..\src\kernel\kernel.c)(0x6AA86FCD)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\kernel.o --omf_browse .\project\kernel.crf --depend .\project\kernel.d)
+I (../../src/include/kernel.h)(0x6AA87547)
 I (../../src/include/errno.h)(0x6AA4FBE7)
 I (D:\keil5\ARM\ARMCC\include\stdint.h)(0x6A626CF3)
+I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x6A626CF3)
 I (../../src/include/bootloader_api.h)(0x6AA4F880)
 I (../../src/drivers/platform/stm32f1/hal/Inc/stm32f1xx_hal.h)(0x6A60F22F)
 I (../../src/drivers/platform/stm32f1/stm32f1xx_hal_conf.h)(0x6AA700C7)
@@ -1835,7 +1837,6 @@ I (../../src/drivers/platform/stm32f1/board/spi.h)(0x6AA700C6)
 I (../../src/include/sys_path.h)(0x6AA6AC68)
 I (../../src/fs/fatfs/ff.h)(0x68E0CE63)
 I (./Application/ffconf.h)(0x6A679A5A)
-I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x6A626CF3)
 I (D:\keil5\ARM\ARMCC\include\stdlib.h)(0x6A626CF3)
 F (.\System\env.c)(0x6AA500CC)(--c99 -c --cpu Cortex-M3 -g -O0 --apcs=interwork --split_sections -I ./Application -I ./System -I ../../src/include -I ../../src/drivers/platform/stm32f1/hal/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc -I ../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy -I ../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include -I ../../src/drivers/platform/stm32f1/cmsis/Include -I ../../src/drivers/platform/stm32f1/board -I ../../src/drivers/platform/stm32f1/ -I ../../src/drivers/usb -I ../../src/drivers/usb/core -I ../../src/drivers/usb/class/CDC -I ../../src/drivers/video -I ../../src/drivers/input/misc -I ../../src/drivers/rtc -I ../../src/drivers/power -I ../../src/drivers/mmc -I ../../src/fs/fatfs-I.\RTE\_Project-ID:\keil5\ARM\PACK\ARM\CMSIS\5.0.1\CMSIS\Include-ID:\keil5\ARM\PACK\Keil\STM32F1xx_DFP\2.2.0\Device\Include-D__UVISION_VERSION="524" -D_RTE_ -DSTM32F10X_MD -DUSE_HAL_DRIVER -DSTM32F103xB-o .\project\env.o --omf_browse .\project\env.crf --depend .\project\env.d)
 I (../../src/fs/fatfs/ff.h)(0x68E0CE63)
@@ -1904,7 +1905,7 @@ I (D:\keil5\ARM\ARMCC\include\stdlib.h)(0x6A626CF3)
 I (D:\keil5\ARM\ARMCC\include\string.h)(0x6A626CF3)
 I (../../src/drivers/usb/core/usbd_core.h)(0x6A60F218)
 I (../../src/drivers/usb/core/usbd_ctlreq.h)(0x6A60F218)
-I (../../src/include/kernel.h)(0x6AA65458)
+I (../../src/include/kernel.h)(0x6AA87547)
 I (../../src/include/errno.h)(0x6AA4FBE7)
 I (../../src/include/sys_path.h)(0x6AA6AC68)
 I (System\shell.h)(0x6AA4E4B2)
@@ -1959,7 +1960,7 @@ I (D:\keil5\ARM\ARMCC\include\stdarg.h)(0x588B8344)
 I (D:\keil5\ARM\ARMCC\include\string.h)(0x6A626CF3)
 I (D:\keil5\ARM\ARMCC\include\stdlib.h)(0x6A626CF3)
 I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x6A626CF3)
-I (../../src/include/kernel.h)(0x6AA65458)
+I (../../src/include/kernel.h)(0x6AA87547)
 I (../../src/include/errno.h)(0x6AA4FBE7)
 I (../../src/include/sys_path.h)(0x6AA6AC68)
 F (.\System\system.h)(0x6AA6541F)()
