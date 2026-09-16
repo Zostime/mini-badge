@@ -192,6 +192,9 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
 
         uint8_t char_width = char_data[0];
         uint8_t *col_data = char_data + 1;
+        if (char_width > sizeof(char_data) - 1) {
+            char_width = sizeof(char_data) - 1;
+        }
 
         // 如果缺少字形, 替换为U+25A1
         if (char_width == 0) {
@@ -205,6 +208,9 @@ void SYS_Printf(uint16_t x, uint16_t y, uint16_t color, uint16_t background_colo
             if (char_width == 0) {
                 char_width = 8;
             }
+			if (char_width > sizeof(char_data) - 1) {
+				char_width = sizeof(char_data) - 1;
+			}
         }
 
         // 自动换行判断
