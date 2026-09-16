@@ -1,7 +1,7 @@
 #include "main.h"
 
 #include "GUI.h"
-#include "ff.h"
+#include "kernel/vfs.h"
 #include "rtc_utils.h"
 #include "usbd_cdc_if.h"
 
@@ -59,7 +59,7 @@ size_t count_screen_lines(void) {
     size_t line_count = 0;    // 总行数
     char ch[SCREEN_CHAR_BYTES + 1]; 
 
-    while(1) {
+	while(byte_offset < screen.length) {
         size_t current_width = 0;     // 当前屏幕行已占宽度
         int line_ended = 0;           // 本行是否已结束
 
@@ -67,7 +67,8 @@ size_t count_screen_lines(void) {
         size_t last_offset = screen.offset;
 
         // 读取字符直到行结束或文本结束
-        while(screen_gets(ch, 1, UNIT_CHAR) != EOS) {
+		while(byte_offset < screen.length &&
+			  screen_gets(ch, 1, UNIT_CHAR) != EOS) {
             if(ch[0] == '\n') {
                 byte_offset++;
                 line_ended = 1;
@@ -76,8 +77,13 @@ size_t count_screen_lines(void) {
 
             size_t w = SYS_GetStrWidth(ch);
             if(current_width + w > screen_info.xres) {
-                screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
-                byte_offset = last_offset;
+				if(current_width > 0) {
+					screen_seek(last_offset, SEEK_SET, UNIT_BYTE);
+					byte_offset = last_offset;
+				} else {
+					// 即使单个字符超宽，也必须消费它，避免死循环。
+					byte_offset = screen.offset;
+				}
                 line_ended = 1;
                 break;
             }			
@@ -402,10 +408,17 @@ void Shell_Prepare(void) {
 		// 加载文件到 screen
 		fr = f_open(&fil, PATH_SCREEN, FA_READ);
 		if (fr == FR_OK) {    
-			size_t file_size = f_size(&fil); 	
-		
-			screen_seek(file_size, SEEK_SET, UNIT_BYTE);
+			size_t file_size = f_size(&fil);
+			if (file_size >= SCREEN_SIZE) {
+				file_size = SCREEN_SIZE - 1;
+			}
+
 			fr = f_read(&fil, screen.buf, file_size, &br);
+			if (fr == FR_OK) {
+				screen.length = br;
+				screen.offset = br;
+				screen.buf[br] = '\0';
+			}
 			f_close(&fil);
 		}
 	}
@@ -422,21 +435,21 @@ void Shell_Init(void) {
 }
 
 void Shell_snapshot(void) {
-	FIL fil;
-	FRESULT res;
-	UINT bw;
-
 	// 将screen.buf写入screen
-	res = f_open(&fil, PATH_SCREEN, FA_WRITE | FA_CREATE_ALWAYS);
-	if(res != FR_OK) return;
-	res = f_write(&fil, screen.buf, screen.length, &bw);
-	if(res!=FR_OK || bw!=screen.length) return;
-	f_close(&fil);
-	
+	int fd = open(PATH_SCREEN, O_WRONLY | O_CREAT | O_TRUNC);
+	if (fd < 0) return;
+
+	ssize_t n = write(fd, screen.buf, screen.length);
+	if (n < 0 || (size_t)n != screen.length) {
+		close(fd);
+		return;
+	}
+	close(fd);
+
 	// 创建0:/run/sh/boot_done记录是否初始化
-	res = f_open(&fil, SH_BOOT_DONE_PATH, FA_WRITE | FA_CREATE_ALWAYS);
-	if(res != FR_OK) return;
-	f_close(&fil);
+	fd = open(SH_BOOT_DONE_PATH, O_WRONLY | O_CREAT | O_TRUNC);
+	if (fd < 0) return;
+	close(fd);
 }
 
 void Shell_Run(void) {
