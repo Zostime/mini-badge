@@ -1,5 +1,6 @@
 #include "kernel/vfs.h"
 #include "ff.h"
+#include "usbd_cdc_if.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -87,6 +88,20 @@ int close(int fd)
 
 ssize_t read(int fd, void *buf, size_t count)
 {
+	   
+	if (fd == 0) {	// STDIN_FILENO
+        int avail = cdc_rx_available();
+        if (avail == 0) return 0;	// No datas
+
+        if ((size_t)avail > count) avail = (int)count;
+
+        char *p = (char *)buf;
+        for (int i = 0; i < avail; i++) {
+            cdc_rx_pop(&p[i]);
+        }
+        return (ssize_t)avail;
+    }
+	
     vfs_fd_t *p = get_fd(fd);
     if (!p) return -1;
     if (count > 0xFFFF) count = 0xFFFF; 

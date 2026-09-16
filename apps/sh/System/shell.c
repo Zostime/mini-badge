@@ -1,6 +1,7 @@
 #include "main.h"
 
 #include "GUI.h"
+#include "ff.h"
 #include "kernel/vfs.h"
 #include "rtc_utils.h"
 #include "usbd_cdc_if.h"
@@ -146,31 +147,39 @@ FRESULT screen_scrollback(uint8_t direction) {
 	f_close(&fil);
 	return res;
 }
-
-uint8_t cdc_rx_buf[SH_CMD_SIZE];
-volatile uint8_t cdc_rx_ready = 0;
-uint16_t cdc_rx_len = 0;
-int CDC_ReadLine(char *buf, int size) {
+int CDC_ReadLine(char *buf, int size)
+{
     int idx = 0;
-    while(1) {
-        if(cdc_rx_ready) {
-            cdc_rx_ready = 0;
-            for(int i = 0; i < cdc_rx_len && idx < size - 1; i++) {
-                char c = cdc_rx_buf[i];
-                if(c == '\r' || c == '\n') {
-                    buf[idx] = '\0';
-                    return idx;
-                }
-                else if (c == 8 || c == 127) {
-                    if(idx > 0) idx--;
-                }
-                else {
+
+    while (1) {
+        char packet[64];
+        ssize_t n = read(0, packet, sizeof(packet));
+
+        if (n <= 0) {
+            HAL_Delay(1);
+            continue;
+        }
+
+        /* 和你原版一样：遍历这一包，遇到换行返回，遍历完也返回 */
+        for (int i = 0; i < n; i++) {
+            char c = packet[i];
+
+            if (c == '\r' || c == '\n') {
+                buf[idx] = '\0';
+                return idx;
+            }
+            else if (c == 8 || c == 127) {
+                if (idx > 0) idx--;
+            }
+            else {
+                if (idx < size - 1) {
                     buf[idx++] = c;
                 }
             }
-            buf[idx] = '\0';
-            return idx;
         }
+
+        buf[idx] = '\0';
+        return idx;                 /* ← 关键：处理完一包立即返回，和原版一致 */
     }
 }
 
