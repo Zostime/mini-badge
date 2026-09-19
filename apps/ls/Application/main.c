@@ -36,6 +36,9 @@
 #include "rtc_utils.h"
 #include "kernel.h"  
 #include "sys_path.h"
+
+#include <stdlib.h>
+#include <string.h>   
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +59,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+#define NAME_BUF_SIZE  2048    
+#define MAX_ENTRIES    256     
+#define MAX_COLS       64 
 
+static uint16_t col_max[MAX_COLS];
+static char    	name_buf[NAME_BUF_SIZE];
+static uint16_t name_off[MAX_ENTRIES];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,7 +76,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+static int cmp_name(const void *a, const void *b)
+{
+    uint16_t ia = *(const uint16_t *)a;
+    uint16_t ib = *(const uint16_t *)b;
+    return strcmp(name_buf + ia, name_buf + ib);
+}
 /* USER CODE END 0 */
 
 /**
@@ -113,21 +127,37 @@ int main(void)
   int argc;
   execve_load(&argc, argv, envp);	
   /* APP CODE BEGIN */
-	FIL fil;  
+	FIL fil;
 	FILINFO fno;
     DIR dir;
     FRESULT res;
-	
+
 	UINT bw;
 	FIL screen_fil;
-	char *path = argv[1]; 
-	
-	static char font_path[64] = "0:/sys/fonts/UNICODE-SYS-Regular-8x8"; 
+	char *fn;
+
+	char path_buf[256];
+	if(argc >= 2 && argv[1] != NULL && argv[1][0] != '\0') {
+		if(argv[1][0] == '/')
+			snprintf(path_buf, sizeof(path_buf), "0:%s", argv[1]);
+		else
+			snprintf(path_buf, sizeof(path_buf), "0:/%s", argv[1]);
+	} else {
+		snprintf(path_buf, sizeof(path_buf), "0:/");
+	}
+	size_t plen = strlen(path_buf);
+	if(plen > 0 && path_buf[plen-1] != '/' && plen < sizeof(path_buf) - 1) {
+		path_buf[plen]   = '/';
+		path_buf[plen+1] = '\0';
+	}
+	char *path = path_buf;
+
+	static char font_path[64] = "0:/sys/fonts/UNICODE-SYS-Regular-8x8";
     FIL file;
     char line[128];
 
     if (f_open(&file, PATH_VCONSOLE_CONF, FA_READ) != FR_OK) {
-        return 1; 
+        return 1;
     }
 
     while (f_gets(line, sizeof(line), &file)) {
@@ -167,65 +197,96 @@ int main(void)
 			}
 			f_close(&fil);
 		}
-		
-		if(!width) width=1;  
-		uint8_t char_col = screen_info.xres / width; 
+
+		if(!width) width=1;
+		uint16_t char_col = screen_info.xres / width;
+		if(char_col == 0) char_col = 1;
 
 		// ls
-		uint16_t max_fname_len = 0;	
-		uint16_t max_fname_col = 0;
-		uint16_t max_fname_row = 0;
-		uint16_t nf_total = 0;
-		char *fn;
+		uint16_t n_entries     = 0;
+		uint16_t buf_used      = 0;
+		uint16_t max_fname_len = 0;
 
 		res = f_opendir(&dir, path);
 		if(res == FR_OK) {
-			for(uint8_t i = 0; i <= 1; i++) {
-				if(i) {
-					f_closedir(&dir);
-					res = f_opendir(&dir, path);
-					if(res != FR_OK) break;
+			while(1) {
+				res = f_readdir(&dir, &fno);
+				if(res != FR_OK || fno.fname[0] == 0) break;
+				if(n_entries >= MAX_ENTRIES) break;
 
-					max_fname_col = char_col / (max_fname_len + 2);
-					if(max_fname_col == 0) max_fname_col=1;
-					
-					max_fname_row = (nf_total+max_fname_col-1) / max_fname_col;
-				
-				}
+				#if _USE_LFN
+					fn = (*fno.lfname) ? fno.lfname : fno.fname;
+				#else
+					fn = fno.fname;
+				#endif
 
-				while(1) {
-					res = f_readdir(&dir, &fno);
-					if(res != FR_OK || fno.fname[0] == 0) break;
+				uint16_t len = strlen(fn);
+				if(buf_used + len + 1 > NAME_BUF_SIZE) break;   // 缓冲满
 
-					#if _USE_LFN
-						fn = (*fno.lfname) ? fno.lfname : fno.fname;
-					#else
-						fn = fno.fname;
-					#endif
+				name_off[n_entries] = buf_used;
+				memcpy(name_buf + buf_used, fn, len + 1);
+				buf_used += len + 1;
+				n_entries++;
 
-					if(!i) {
-						uint16_t len = strlen(fn);
-						if(len > max_fname_len) max_fname_len = len;
-						nf_total++;                
-					} else if(fno.fattrib & AM_DIR) {
-						f_write(&screen_fil, fn, strlen(fn), &bw);
-						f_write(&screen_fil, " ", 1, &bw);
-					} else {
-						f_write(&screen_fil, fn, strlen(fn), &bw);
-						f_write(&screen_fil, " ", 1, &bw);
-					}
-				}
+				if(len > max_fname_len) max_fname_len = len;
 			}
-		} else {
-			// Open DIR Fail
+			f_closedir(&dir);
 		}
-		f_closedir(&dir);
+
+		if(n_entries > 1)
+			qsort(name_off, n_entries, sizeof(uint16_t), cmp_name);
+
+		// 迭代尝试列数
+		uint16_t C_hi = (n_entries < MAX_COLS) ? n_entries : MAX_COLS;
+		if(C_hi < 1) C_hi = 1;
+
+		uint16_t max_fname_col = 1;
+		uint16_t max_fname_row = n_entries;
+
+		for(uint16_t tryC = C_hi; ; tryC--) {
+			uint16_t tryR = (n_entries + tryC - 1) / tryC;
+			uint16_t total = 0;
+			for(uint16_t c = 0; c < tryC; c++) {
+				uint16_t m = 0;
+				for(uint16_t r = 0; r < tryR; r++) {
+					uint16_t idx = c * tryR + r;
+					if(idx >= n_entries) break;
+					uint16_t len = strlen(name_buf + name_off[idx]);
+					if(len > m) m = len;
+				}
+				col_max[c] = m + 2;
+				total += m + 2;
+			}
+			if(total - 2 <= char_col || tryC == 1) {
+				max_fname_col = tryC;
+				max_fname_row = tryR;
+				break;
+			}
+		}
+
+		for(uint16_t r = 0; r < max_fname_row; r++) {
+			for(uint16_t c = 0; c < max_fname_col; c++) {
+				uint16_t idx = c * max_fname_row + r;
+				if(idx >= n_entries) {
+					for(uint16_t k = 0; k < col_max[c]; k++)
+						f_write(&screen_fil, " ", 1, &bw);
+					continue;
+				}
+				char *name = name_buf + name_off[idx];
+				uint16_t n   = strlen(name);
+				uint16_t pad = (col_max[c] > n) ? (col_max[c] - n) : 0;
+
+				f_write(&screen_fil, name, n, &bw);
+				while(pad--) f_write(&screen_fil, " ", 1, &bw);
+			}
+			f_write(&screen_fil, "\r\n", 2, &bw);
+		}
+
+		f_close(&screen_fil);
 	}
-	f_write(&screen_fil, "\n", 1, &bw);
-	f_close(&screen_fil);
-	
-	/* APP CODE END */
-	// JMP sh
+
+  /* APP CODE END */
+  // JMP sh
 	argv[0] = "sh";
 	argv[1] = NULL;
 	execve("0:/bin/sh", argv, NULL);

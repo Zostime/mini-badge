@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>./Application;../../src/include;../../src/drivers/platform/stm32f1/hal/Inc;../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc;../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy;../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include;../../src/drivers/platform/stm32f1/cmsis/Include;../../src/drivers/platform/stm32f1/board;../../src/drivers/platform/stm32f1/;../../src/drivers/usb;../../src/drivers/usb/core;../../src/drivers/usb/class/CDC;../../src/drivers/video;../../src/drivers/input/misc;../../src/drivers/rtc;../../src/drivers/power;../../src/drivers/sound;../../src/drivers/mmc;../../src/fs/fatfs</IncludePath>
+              <IncludePath>./Application;../../src/include;../../src/drivers/platform/stm32f1/hal/Inc;../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc;../../src/drivers/platform/stm32f1/STM32F1xx_HAL_Driver/Inc/Legacy;../../src/drivers/platform/stm32f1/cmsis/Device/ST/STM32F1xx/Include;../../src/drivers/platform/stm32f1/cmsis/Include;../../src/drivers/platform/stm32f1/board;../../src/drivers/platform/stm32f1/;../../src/drivers/usb;../../src/drivers/usb/core;../../src/drivers/usb/class/CDC;../../src/drivers/video;../../src/drivers/input/misc;../../src/drivers/rtc;../../src/drivers/power;../../src/drivers/sound;../../src/drivers/mmc;../../src/fs/fatfs;../../src/include;../../src/kernel</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
