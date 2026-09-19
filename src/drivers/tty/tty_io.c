@@ -39,5 +39,5 @@ ssize_t tty_read(char *buf, int size) {
 }
 
 ssize_t tty_write(char *buf, int size) {
-	
+	return 0;
 }

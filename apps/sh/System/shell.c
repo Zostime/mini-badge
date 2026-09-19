@@ -3,6 +3,7 @@
 #include "GUI.h"
 #include "ff.h"
 #include <kernel/vfs.h>
+#include <kernel/tty.h>
 #include "rtc_utils.h"
 
 #include "kernel.h"
@@ -147,40 +148,6 @@ FRESULT screen_scrollback(uint8_t direction) {
 	f_close(&fil);
 	return res;
 }
-int CDC_ReadLine(char *buf, int size) {
-    int idx = 0;
-
-    while (1) {
-        char packet[64];
-        ssize_t n = read(0, packet, sizeof(packet));
-
-        if (n <= 0) {
-            HAL_Delay(1);
-            continue;
-        }
-
-        for (int i = 0; i < n; i++) {
-            char c = packet[i];
-
-            if (c == '\r' || c == '\n') {
-                buf[idx] = '\0';
-                return idx;
-            }
-            else if (c == 8 || c == 127) {
-                if (idx > 0) idx--;
-            }
-            else {
-                if (idx < size - 1) {
-                    buf[idx++] = c;
-                }
-            }
-        }
-
-        buf[idx] = '\0';
-        return idx; 
-    }
-}
-
 static err_t path_normalize(const char *src, char *dst) {
     if (strncmp(src, "0:", 2) != 0) return EINVAL;
 
@@ -496,7 +463,7 @@ void Shell_Run(void) {
 		
 		/* INPUT */ {
 			char input[SH_CMD_SIZE];
-			if (CDC_ReadLine(input, sizeof(input)) >= 0) {
+			if (tty_read(input, sizeof(input)) >= 0) {
 				screen_printf("%s\n",input);
 				SYS_Printf(0,0,WHITE,BLACK,"%s",screen.buf);
 				cur_offset = screen.offset;
