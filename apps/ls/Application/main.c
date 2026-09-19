@@ -102,6 +102,7 @@ static int cmp_name(const void *a, const void *b)
 
 typedef struct {
     int one_col;        // -1
+    int no_sort;        // -U
     int color;          // --color=auto|never
     const char *path;
 } ls_opts_t;
@@ -142,6 +143,7 @@ static int parse_args(int argc, char *argv[], ls_opts_t *opt)
         for(int k = 1; arg[k] != '\0'; k++) {
             switch(arg[k]) {
             case '1': opt->one_col = 1; break;
+            case 'U': opt->no_sort = 1; break;
             default:  return -1;
             }
         }
@@ -193,19 +195,21 @@ int main(void)
   int argc;
   execve_load(&argc, argv, envp);	
   /* APP CODE BEGIN */
+	FIL fil;
+	FILINFO fno;
+	DIR dir;
+	FRESULT res;
+  
+	FIL screen_fil;
+	UINT bw;
+	
+	char *fn;
+  
 	ls_opts_t opt;
 	if(parse_args(argc, argv, &opt) != 0) {
 		// Error EINVAL
 		goto out;
 	} 
-	FIL fil;
-	FILINFO fno;
-	DIR dir;
-	FRESULT res;
-
-	UINT bw;
-	FIL screen_fil;
-	char *fn;
 	
 	// Path
 	char path_buf[256];
@@ -316,7 +320,7 @@ int main(void)
 		}
 
 		// sort
-		if(n_entries > 1)
+		if(!opt.no_sort && n_entries > 1)
 			qsort(name_rec, n_entries, sizeof(namerec_t), cmp_name);
 
 		// Output format
