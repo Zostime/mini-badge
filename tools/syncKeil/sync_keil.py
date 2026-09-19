@@ -9,7 +9,10 @@ import xml.etree.ElementTree as ET
 ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
 
 SRC_APP = ".template"
-DST_APP = ""  # 留空则同步 apps 下所有非源 app
+DST_APP = "ls"  # 留空则同步 apps 下所有非源 app
+MODE = "merge"  # "replace" 直接替换, "merge" 合并
+
+TAGS_TO_REPLACE = (".//FilePath", ".//FileName", ".//GroupName")
 
 
 def find_git_root(start: Path) -> Path | None:
@@ -73,6 +76,13 @@ def replace_app(text: str, src_app: str, dst_app: str) -> str:
     return pattern.sub(lambda m: m.group(1) + dst_app, text)
 
 
+def replace_tree_app(elem, src_app: str, dst_app: str) -> None:
+    for tag in TAGS_TO_REPLACE:
+        for el in elem.findall(tag):
+            if el.text:
+                el.text = replace_app(el.text, src_app, dst_app)
+
+
 def find_uvprojx(app_dir: Path, src_rel: Path | None = None) -> Path | None:
     """在 app 目录下查找 .uvprojx，优先与源工程相对路径一致的文件"""
     if src_rel:
@@ -88,6 +98,68 @@ def find_uvprojx(app_dir: Path, src_rel: Path | None = None) -> Path | None:
         if f.parent.name.lower() == "project":
             return f
     return files[0]
+
+
+def merge_include_path(dst_text: str, src_text: str, src_app: str, dst_app: str) -> str:
+    src_text = replace_app(src_text or "", src_app, dst_app)
+    existing = [p.strip() for p in (dst_text or "").split(";") if p.strip()]
+    existing_lower = {p.lower() for p in existing}
+    for p in (src_text or "").split(";"):
+        p = p.strip()
+        if p and p.lower() not in existing_lower:
+            existing.append(p)
+            existing_lower.add(p.lower())
+    return ";".join(existing)
+
+
+def merge_groups(dst_target, src_groups, src_app: str, dst_app: str) -> None:
+    dst_groups = dst_target.find("Groups")
+    if dst_groups is None:
+        dst_groups = ET.SubElement(dst_target, "Groups")
+
+    dst_by_name = {}
+    for g in dst_groups.findall("Group"):
+        name_el = g.find("GroupName")
+        if name_el is not None and name_el.text:
+            dst_by_name[name_el.text] = g
+
+    for src_g in src_groups.findall("Group"):
+        name_el = src_g.find("GroupName")
+        group_name = name_el.text if name_el is not None and name_el.text else None
+
+        if group_name and group_name in dst_by_name:
+            dst_g = dst_by_name[group_name]
+            dst_files_el = dst_g.find("Files")
+            src_files_el = src_g.find("Files")
+            if src_files_el is None:
+                continue
+            if dst_files_el is None:
+                new_files_el = copy.deepcopy(src_files_el)
+                replace_tree_app(new_files_el, src_app, dst_app)
+                dst_g.append(new_files_el)
+                continue
+
+            existing_names = set()
+            for f in dst_files_el.findall("File"):
+                fn = f.find("FileName")
+                if fn is not None and fn.text:
+                    existing_names.add(fn.text)
+
+            for src_f in src_files_el.findall("File"):
+                fn = src_f.find("FileName")
+                if fn is None or not fn.text:
+                    continue
+                if fn.text in existing_names:
+                    continue
+                new_f = copy.deepcopy(src_f)
+                replace_tree_app(new_f, src_app, dst_app)
+                dst_files_el.append(new_f)
+                existing_names.add(fn.text)
+        else:
+            new_g = copy.deepcopy(src_g)
+            replace_tree_app(new_g, src_app, dst_app)
+            dst_groups.append(new_g)
+
 
 def sync_one(src_file: Path, dst_file: Path, src_app: str, dst_app: str,
              backup_dir: Path) -> None:
@@ -109,7 +181,11 @@ def sync_one(src_file: Path, dst_file: Path, src_app: str, dst_app: str,
                 if i < len(src_include_paths)
                 else src_include_paths[0]
             )
-            node.text = replace_app(src_text, src_app, dst_app)
+            if MODE == "merge":
+                node.text = merge_include_path(node.text or "", src_text,
+                                               src_app, dst_app)
+            else:
+                node.text = replace_app(src_text, src_app, dst_app)
 
     # 2. Groups
     if src_groups is not None:
@@ -117,21 +193,25 @@ def sync_one(src_file: Path, dst_file: Path, src_app: str, dst_app: str,
         if dst_target is None:
             raise RuntimeError(f"{dst_file} 中找不到 <Target>")
 
-        dst_groups = dst_target.find("Groups")
-        if dst_groups is None:
-            dst_groups = ET.SubElement(dst_target, "Groups")
+        if MODE == "merge":
+            merge_groups(dst_target, src_groups, src_app, dst_app)
+        else:
+            dst_groups = dst_target.find("Groups")
+            if dst_groups is None:
+                dst_groups = ET.SubElement(dst_target, "Groups")
 
-        for child in list(dst_groups):
-            dst_groups.remove(child)
+            for child in list(dst_groups):
+                dst_groups.remove(child)
 
-        for child in src_groups:
-            dst_groups.append(copy.deepcopy(child))
+            for child in src_groups:
+                dst_groups.append(copy.deepcopy(child))
 
     # 3. 替换 FilePath / FileName / GroupName 里的源 app 名
-    for tag in (".//FilePath", ".//FileName", ".//GroupName"):
-        for el in dst_root.findall(tag):
-            if el.text:
-                el.text = replace_app(el.text, src_app, dst_app)
+    if MODE == "replace":
+        for tag in TAGS_TO_REPLACE:
+            for el in dst_root.findall(tag):
+                if el.text:
+                    el.text = replace_app(el.text, src_app, dst_app)
 
     # 备份到 backups/<dst_app>.uvprojx.bak
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -178,6 +258,7 @@ def main() -> None:
 
     src_rel = src_uvprojx.relative_to(src_app_dir)
     print(f"[info] 源工程: {src_uvprojx}")
+    print(f"[info] 模式: {MODE}")
 
     if args.dst_apps:
         dst_names = args.dst_apps
@@ -232,4 +313,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    

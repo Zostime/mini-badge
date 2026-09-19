@@ -2,9 +2,8 @@
 
 #include "GUI.h"
 #include "ff.h"
-#include "kernel/vfs.h"
+#include <kernel/vfs.h>
 #include "rtc_utils.h"
-#include "usbd_cdc_if.h"
 
 #include "kernel.h"
 #include "sys_path.h"
@@ -15,6 +14,7 @@
 #include "env.h"
 
 #include <stdbool.h>
+#include <string.h>
 
 int env_build_environ(char *buf[], int max_env) {
     int count = 0;
@@ -147,8 +147,7 @@ FRESULT screen_scrollback(uint8_t direction) {
 	f_close(&fil);
 	return res;
 }
-int CDC_ReadLine(char *buf, int size)
-{
+int CDC_ReadLine(char *buf, int size) {
     int idx = 0;
 
     while (1) {
@@ -160,7 +159,6 @@ int CDC_ReadLine(char *buf, int size)
             continue;
         }
 
-        /* 和你原版一样：遍历这一包，遇到换行返回，遍历完也返回 */
         for (int i = 0; i < n; i++) {
             char c = packet[i];
 
@@ -179,7 +177,7 @@ int CDC_ReadLine(char *buf, int size)
         }
 
         buf[idx] = '\0';
-        return idx;                 /* ← 关键：处理完一包立即返回，和原版一致 */
+        return idx; 
     }
 }
 
