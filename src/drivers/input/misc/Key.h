@@ -9,18 +9,17 @@
 #define KEY_TIME_REPEAT			100
 
 #define KEY_COUNT				3
+#define KEY_1  0
+#define KEY_2  1
+#define KEY_3  2
 
-#define KEY_1					0
-#define KEY_2					1
-#define KEY_3					2
-
-#define KEY_HOLD				0x01
-#define KEY_DOWN				0x02
-#define KEY_UP					0x04
-#define KEY_SINGLE				0x08
-#define KEY_DOUBLE				0x10
-#define KEY_LONG				0x20
-#define KEY_REPEAT				0x40
+#define KFLAG_HOLD				0x01
+#define KFLAG_DOWN				0x02
+#define KFLAG_UP				0x04
+#define KFLAG_SINGLE			0x08
+#define KFLAG_DOUBLE			0x10
+#define KFLAG_LONG				0x20
+#define KFLAG_REPEAT			0x40
 
 #define KEY_NONE 	  0
 #define KEY1_SINGLE   1

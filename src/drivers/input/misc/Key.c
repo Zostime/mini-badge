@@ -1,10 +1,26 @@
 #include "main.h"
 #include "tim.h"
 #include "Key.h"
+#include <kernel/input.h>
 
 uint8_t Key_Flag[KEY_COUNT];
 
+static const uint16_t key_code[KEY_COUNT] = {
+    KEY_A, KEY_B, KEY_C
+};
+
+static void key_emit(uint8_t n, uint8_t flag)
+{
+    uint16_t code = key_code[n];
+    if      (flag & KFLAG_DOWN)   input_event_push(EV_KEY, code, 1);
+    else if (flag & KFLAG_UP)     input_event_push(EV_KEY, code, 0);
+    else if (flag & KFLAG_LONG)   input_event_push(EV_KEY, code, 2);
+    else if (flag & KFLAG_REPEAT) input_event_push(EV_KEY, code, 2);
+    else if (flag & KFLAG_SINGLE) input_event_push(EV_KEY, code, 1);
+}
+
 void Key_Init(void) {
+	
 	HAL_TIM_Base_Start_IT(&htim2);
 } 
 
@@ -19,7 +35,7 @@ uint8_t Key_Check(uint8_t n, uint8_t Flag)
 {
 	if (Key_Flag[n] & Flag)
 	{
-		if (Flag != KEY_HOLD)
+		if (Flag != KFLAG_HOLD)
 		{
 			Key_Flag[n] &= ~Flag;
 		}
@@ -55,21 +71,23 @@ void Key_Tick(void)
 			
 			if (CurrState[i] == KEY_PRESSED)
 			{
-				Key_Flag[i] |= KEY_HOLD;
+				Key_Flag[i] |= KFLAG_HOLD;
 			}
 			else
 			{
-				Key_Flag[i] &= ~KEY_HOLD;
+				Key_Flag[i] &= ~KFLAG_HOLD;
 			}
 			
 			if (CurrState[i] == KEY_PRESSED && PrevState[i] == KEY_UNPRESSED)
 			{
-				Key_Flag[i] |= KEY_DOWN;
+				Key_Flag[i] |= KFLAG_DOWN;
+				key_emit(i, KFLAG_DOWN);
 			}
 			
 			if (CurrState[i] == KEY_UNPRESSED && PrevState[i] == KEY_PRESSED)
 			{
-				Key_Flag[i] |= KEY_UP;
+				Key_Flag[i] |= KFLAG_UP;
+				key_emit(i, KFLAG_UP);
 			}
 			
 			if (S[i] == 0)
@@ -90,7 +108,8 @@ void Key_Tick(void)
 				else if (Time[i] == 0)
 				{
 					Time[i] = KEY_TIME_REPEAT;
-					Key_Flag[i] |= KEY_LONG;
+					Key_Flag[i] |= KFLAG_LONG;
+					key_emit(i, KFLAG_LONG);
 					S[i] = 4;
 				}
 			}
@@ -98,12 +117,13 @@ void Key_Tick(void)
 			{
 				if (CurrState[i] == KEY_PRESSED)
 				{
-					Key_Flag[i] |= KEY_DOUBLE;
+					Key_Flag[i] |= KFLAG_DOUBLE;
 					S[i] = 3;
 				}
 				else if (Time[i] == 0)
 				{
-					Key_Flag[i] |= KEY_SINGLE;
+					Key_Flag[i] |= KFLAG_SINGLE;
+					key_emit(i, KFLAG_SINGLE);
 					S[i] = 0;
 				}
 			}
@@ -123,7 +143,8 @@ void Key_Tick(void)
 				else if (Time[i] == 0)
 				{
 					Time[i] = KEY_TIME_REPEAT;
-					Key_Flag[i] |= KEY_REPEAT;
+					Key_Flag[i] |= KFLAG_REPEAT;
+					key_emit(i, KFLAG_REPEAT);
 					S[i] = 4;
 				}
 			}
@@ -132,15 +153,15 @@ void Key_Tick(void)
 }
 
 uint8_t Key_GetStatus(void) {
-    if (Key_Check(KEY_1, KEY_SINGLE)) return KEY1_SINGLE;
-    if (Key_Check(KEY_1, KEY_LONG))   return KEY1_LONG;
-    if (Key_Check(KEY_1, KEY_REPEAT)) return KEY1_REPEAT;
-    if (Key_Check(KEY_2, KEY_SINGLE)) return KEY2_SINGLE;
-    if (Key_Check(KEY_2, KEY_LONG))   return KEY2_LONG;
-    if (Key_Check(KEY_2, KEY_REPEAT)) return KEY2_REPEAT;
-    if (Key_Check(KEY_3, KEY_SINGLE)) return KEY3_SINGLE;
-    if (Key_Check(KEY_3, KEY_LONG))   return KEY3_LONG;
-    if (Key_Check(KEY_3, KEY_REPEAT)) return KEY3_REPEAT;
+    if (Key_Check(KEY_1, KFLAG_SINGLE)) return KEY1_SINGLE;
+    if (Key_Check(KEY_1, KFLAG_LONG))   return KEY1_LONG;
+    if (Key_Check(KEY_1, KFLAG_REPEAT)) return KEY1_REPEAT;
+    if (Key_Check(KEY_2, KFLAG_SINGLE)) return KEY2_SINGLE;
+    if (Key_Check(KEY_2, KFLAG_LONG))   return KEY2_LONG;
+    if (Key_Check(KEY_2, KFLAG_REPEAT)) return KEY2_REPEAT;
+    if (Key_Check(KEY_3, KFLAG_SINGLE)) return KEY3_SINGLE;
+    if (Key_Check(KEY_3, KFLAG_LONG))   return KEY3_LONG;
+    if (Key_Check(KEY_3, KFLAG_REPEAT)) return KEY3_REPEAT;
     return KEY_NONE;
 }
 
