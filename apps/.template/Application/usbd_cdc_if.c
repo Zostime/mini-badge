@@ -258,11 +258,11 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
-  /* USER CODE BEGIN 6 */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-  return (USBD_OK);
-  /* USER CODE END 6 */
+    cdc_rx_push(Buf, *Len);
+
+    USBD_CDC_SetRxBuffer(&hUsbDeviceFS, Buf);
+    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    return USBD_OK;
 }
 
 /**
@@ -291,7 +291,34 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+#define CDCRX_BUF_SIZE  128
 
+static volatile char cdc_rx_buf[CDCRX_BUF_SIZE];
+static volatile uint16_t cdc_rx_head = 0;   // Write Pointer
+static volatile uint16_t cdc_rx_tail = 0;   // Read Pointer
+
+void cdc_rx_push(const uint8_t *data, uint32_t len)
+{
+    for (uint32_t i = 0; i < len; i++) {
+        uint16_t next = (cdc_rx_head + 1) % CDCRX_BUF_SIZE;
+        if (next == cdc_rx_tail) break;      // Fully buffered
+        cdc_rx_buf[cdc_rx_head] = data[i];
+        cdc_rx_head = next;
+    }
+}
+
+int cdc_rx_pop(char *out)
+{
+    if (cdc_rx_tail == cdc_rx_head) return 0;   // No datas
+    *out = cdc_rx_buf[cdc_rx_tail];
+    cdc_rx_tail = (cdc_rx_tail + 1) % CDCRX_BUF_SIZE;
+    return 1;
+}
+
+int cdc_rx_available(void)
+{
+    return (cdc_rx_head - cdc_rx_tail + CDCRX_BUF_SIZE) % CDCRX_BUF_SIZE;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**

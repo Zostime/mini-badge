@@ -8,9 +8,9 @@ import xml.etree.ElementTree as ET
 
 ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
 
-SRC_APP = ".template"
-DST_APP = "ls"  # 留空则同步 apps 下所有非源 app
-MODE = "merge"  # "replace" 直接替换, "merge" 合并
+SRC_APP = "cat"
+DST_APP = ".template"  # 留空则同步 apps 下所有非源 app
+MODE = "replace"  # "replace" 直接替换, "merge" 合并
 
 TAGS_TO_REPLACE = (".//FilePath", ".//FileName", ".//GroupName")
 

@@ -36,6 +36,7 @@
 #include "rtc_utils.h"
 #include "kernel.h"
 #include "sys_path.h"
+#include <kernel/vfs.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
