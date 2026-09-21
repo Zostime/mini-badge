@@ -22,22 +22,17 @@ static BYTE fatfs_mode(int flags)
 {
     BYTE mode = 0;
 
-    // 读写权限
     if ((flags & O_ACCMODE) != O_WRONLY) mode |= FA_READ;
     if ((flags & O_ACCMODE) != O_RDONLY) mode |= FA_WRITE;
 
-    // 创建/截断
-    if (flags & O_CREAT) {
-        if (flags & O_EXCL) {
-            mode |= FA_CREATE_NEW;       // 存在则失败
-        } else if (flags & O_TRUNC) {
-            mode |= FA_CREATE_ALWAYS;    // 存在则清空
-        } else {
-            mode |= FA_OPEN_ALWAYS;      // 存在则打开，否则创建
-        }
-    } else {
-        mode |= FA_OPEN_EXISTING;        // 不存在则失败
-    }
+    if (flags & O_APPEND)
+        mode |= FA_OPEN_APPEND;            
+    else if (flags & O_CREAT) {
+        if (flags & O_EXCL)       mode |= FA_CREATE_NEW;
+        else if (flags & O_TRUNC) mode |= FA_CREATE_ALWAYS;
+        else                      mode |= FA_OPEN_ALWAYS;
+    } else
+        mode |= FA_OPEN_EXISTING;
 
     return mode;
 }
